@@ -220,17 +220,15 @@ public class HandlingRequestsAndRetrievalsTransyt {
 			int responseCode = conn.getResponseCode();
 						
 			if (responseCode!=200) 
-				logger.error("Error closing the connection."); 
+				logger.error("Error closing the connection for docker identified by: " + docker); 
 			else 
-				logger.info("The connection was closed successfully."); 
+				logger.info("The connection was closed successfully for docker identified by: " + docker); 
 
 		} 
 		catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
