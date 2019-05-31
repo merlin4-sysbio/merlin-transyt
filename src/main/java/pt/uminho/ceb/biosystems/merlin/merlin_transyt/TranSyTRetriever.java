@@ -9,6 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
@@ -57,7 +59,7 @@ public class TranSyTRetriever implements Observer {
 
 	private WorkspaceAIB project;
 	private TimeLeftProgress progress = new TimeLeftProgress();
-	private AtomicBoolean cancel;
+	private AtomicBoolean cancel = new AtomicBoolean(false);
 	private AtomicInteger querySize;
 	private AtomicInteger counter = new AtomicInteger(0);
 	private long startTime;
@@ -71,57 +73,59 @@ public class TranSyTRetriever implements Observer {
 
 	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject")
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {
+		
+		this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
 
-		//if (submitFiles()) {
-		if(true) {
+		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "The required files for TranSyT are being submitted.");
+
+		if (submitFiles() && !this.cancel.get()) {
 			
-			
-			transytResultsFile = "C:\\Users\\mario\\Desktop\\ze milho\\Bioinformática - Universidade\\merlin4\\merlin-aibench\\ws\\teste\\568703\\transyt\\results\\transyt.xml";
-			
+			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "The transport reactions are being integrated.");
+
 			String workspaceName = project.getName();
-			
+
 			try {
-				
+
 				Connection conn = new Connection(project.getDatabase().getDatabaseAccess());
 				Statement statement = conn.createStatement();
-				
+
 				Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
-				
+
 				AnnotationCompartmentsAIB c = null;
-				
+
 				for(WorkspaceEntity e: project.getDatabase().getAnnotations().getEntitiesList())
 					if(e.getName().equalsIgnoreCase("compartments"))
 						c=(AnnotationCompartmentsAIB) e;
-				
+
 				if(ProjectServices.isCompartmentalisedModel(workspaceName))
 					geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
-				
-				System.out.println(transytResultsFile);
-				
+
 				ParamSpec[] paramsSpec = new ParamSpec[]{
 						new ParamSpec("compartments", Map.class, geneCompartment, null),
 						new ParamSpec("transytResultPath", String.class, transytResultsFile, null),
 						new ParamSpec("workspace", WorkspaceAIB.class, project, null)
-					};
-					
-					for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
-						if (def.getID().equals("operations.ModelTransporterstoIntegration.ID")){
-							
-							Workbench.getInstance().executeOperation(def, paramsSpec);
-						}
+				};
+				for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
+					if (def.getID().equals("operations.ModelTransporterstoIntegration.ID")){
+
+						Workbench.getInstance().executeOperation(def, paramsSpec);
 					}
-					
+				}
+
 				conn.closeConnection();	
 
-				
-				Workbench.getInstance().info("Transyt's transport reactions were integrated successfully");
+
+//				Workbench.getInstance().info("Transyt's transport reactions were integrated successfully");
 			}
 			catch(Exception ex){
 				ex.printStackTrace();
 			}
 		}
+		else if(this.cancel.get()) {
+			Workbench.getInstance().warn("operation canceled!");
+		}
 		else {
-			Workbench.getInstance().error("Error while doing the operation!");
+			Workbench.getInstance().error("error while doing the operation! please try again");
 		}
 	}
 
@@ -131,7 +135,7 @@ public class TranSyTRetriever implements Observer {
 	 * @param project
 	 */
 	public void checkNewProject(WorkspaceAIB project) {
-
+		
 		if(project == null) {
 
 			throw new IllegalArgumentException("No New Project Selected!");
@@ -188,7 +192,6 @@ public class TranSyTRetriever implements Observer {
 
 		try {
 
-
 			docker = post.postFiles();
 
 			if(docker!=null) {
@@ -196,27 +199,40 @@ public class TranSyTRetriever implements Observer {
 				try {
 					logger.info("DockerID attributed: {}", docker);
 					Boolean go = false;
+					
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, "The files have been submitted. Waiting for the results...");
 
-					while (!go) {
+					while (!go &&  !this.cancel.get()) {
 						go = post.getStatus(docker);
 
 						if(go == null) {  
 							logger.error("Error!");
+							post.closeConnection(docker);
 							System.exit(1);
 						}
 
 						TimeUnit.SECONDS.sleep(3);
 					}
+					
+					if(this.cancel.get())
+						post.closeConnection(docker);
+					
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "The transport reactions are being downloaded.");
 
-					verify = post.downloadFile(docker, getWorkDirectory().concat("/"+TRANSYT_FILE_NAME).concat("/results"));
+					if(!this.cancel.get())
+						verify = post.downloadFile(docker, getWorkDirectory().concat("/"+TRANSYT_FILE_NAME).concat("/results"));
+					else
+						post.closeConnection(docker);
 					
 					FileUtils.extractZipFile(getWorkDirectory().concat("/"+TRANSYT_FILE_NAME+"/results.tar.gz"), getWorkDirectory().concat("/"+TRANSYT_FILE_NAME));
+
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "Verifying...");
 					
 					if (verify) {
 						verify=verifyKeys();
 						logger.info("The result of the verification of md5 file was {}", Boolean.toString(verify));
 					}
-					
+
 					transytResultsFile = getWorkDirectory().concat("/"+TRANSYT_FILE_NAME).concat("/results/transyt.xml");
 					post.closeConnection(docker);
 					return verify;
@@ -251,11 +267,11 @@ public class TranSyTRetriever implements Observer {
 	}
 
 	private boolean verifyKeys() throws IOException, NoSuchAlgorithmException {
-		
+
 		String path = getWorkDirectory().concat("/"+TRANSYT_FILE_NAME+"/results");
 
 		MessageDigest md5Digest = MessageDigest.getInstance("MD5");
-		
+
 		File file = new File(path.concat("/transyt.xml"));
 
 		String checksum = getFileChecksum(md5Digest, file);
@@ -346,13 +362,25 @@ public class TranSyTRetriever implements Observer {
 
 			File transytFile = new File(getWorkDirectory().concat("/transyt"));
 
+			if (transytFile.exists()) {
+				transytFile.delete();
+			} 
+
 			transytFile.mkdir(); //creation of a directory to put the required files
+			
+			File proteinFile2 = new File(getWorkDirectory().concat("/").concat("protein.faa"));
+			
+			File genomeFile = new File(getWorkDirectory().concat("/").concat("transyt/genome.faa"));
+			
+			Files.copy(proteinFile2.toPath(), genomeFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			
+//			org.apache.commons.io.FileUtils.copyDirectory(proteinFile2, genomeFile);
+			
+//			String proteinFileName = "genome.faa";
+//
+//			File proteinFile = new File(g);
 
-			String proteinFileName = "genome.faa";
-
-			File proteinFile = new File(getWorkDirectory().concat("/").concat(proteinFileName));
-
-			requiredFiles.add(0,proteinFile);
+			requiredFiles.add(0,genomeFile);
 
 			File taxIDFile = new File(getWorkDirectory().concat("/transyt").concat("/taxID.txt"));
 
@@ -454,10 +482,10 @@ public class TranSyTRetriever implements Observer {
 	}
 
 
-//	public void propertyChange(PropertyChangeEvent evt) {
-//		// TODO Auto-generated method stub
-//		
-//	}
+	//	public void propertyChange(PropertyChangeEvent evt) {
+	//		// TODO Auto-generated method stub
+	//		
+	//	}
 
 }
 
