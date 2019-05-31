@@ -59,7 +59,7 @@ public class TranSyTRetriever implements Observer {
 
 	private WorkspaceAIB project;
 	private TimeLeftProgress progress = new TimeLeftProgress();
-	private AtomicBoolean cancel;
+	private AtomicBoolean cancel = new AtomicBoolean(false);
 	private AtomicInteger querySize;
 	private AtomicInteger counter = new AtomicInteger(0);
 	private long startTime;
@@ -73,8 +73,14 @@ public class TranSyTRetriever implements Observer {
 
 	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject")
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {
+		
+		this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
 
-		if (submitFiles()) {
+		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "The required files for TranSyT are being submitted.");
+
+		if (submitFiles() && !this.cancel.get()) {
+			
+			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "The transport reactions are being integrated.");
 
 			String workspaceName = project.getName();
 
@@ -94,8 +100,6 @@ public class TranSyTRetriever implements Observer {
 				if(ProjectServices.isCompartmentalisedModel(workspaceName))
 					geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
 
-				System.out.println(transytResultsFile);
-
 				ParamSpec[] paramsSpec = new ParamSpec[]{
 						new ParamSpec("compartments", Map.class, geneCompartment, null),
 						new ParamSpec("transytResultPath", String.class, transytResultsFile, null),
@@ -104,7 +108,6 @@ public class TranSyTRetriever implements Observer {
 				for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
 					if (def.getID().equals("operations.ModelTransporterstoIntegration.ID")){
 
-						System.out.println("coise");
 						Workbench.getInstance().executeOperation(def, paramsSpec);
 					}
 				}
@@ -112,14 +115,17 @@ public class TranSyTRetriever implements Observer {
 				conn.closeConnection();	
 
 
-				Workbench.getInstance().info("Transyt's transport reactions were integrated successfully");
+//				Workbench.getInstance().info("Transyt's transport reactions were integrated successfully");
 			}
 			catch(Exception ex){
 				ex.printStackTrace();
 			}
 		}
+		else if(this.cancel.get()) {
+			Workbench.getInstance().warn("operation canceled!");
+		}
 		else {
-			Workbench.getInstance().error("Error while doing the operation!");
+			Workbench.getInstance().error("error while doing the operation! please try again");
 		}
 	}
 
@@ -129,7 +135,7 @@ public class TranSyTRetriever implements Observer {
 	 * @param project
 	 */
 	public void checkNewProject(WorkspaceAIB project) {
-
+		
 		if(project == null) {
 
 			throw new IllegalArgumentException("No New Project Selected!");
@@ -193,8 +199,10 @@ public class TranSyTRetriever implements Observer {
 				try {
 					logger.info("DockerID attributed: {}", docker);
 					Boolean go = false;
+					
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, "The files have been submitted. Waiting for the results...");
 
-					while (!go) {
+					while (!go &&  !this.cancel.get()) {
 						go = post.getStatus(docker);
 
 						if(go == null) {  
@@ -205,11 +213,21 @@ public class TranSyTRetriever implements Observer {
 
 						TimeUnit.SECONDS.sleep(3);
 					}
+					
+					if(this.cancel.get())
+						post.closeConnection(docker);
+					
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "The transport reactions are being downloaded.");
 
-					verify = post.downloadFile(docker, getWorkDirectory().concat("/"+TRANSYT_FILE_NAME).concat("/results"));
-
+					if(!this.cancel.get())
+						verify = post.downloadFile(docker, getWorkDirectory().concat("/"+TRANSYT_FILE_NAME).concat("/results"));
+					else
+						post.closeConnection(docker);
+					
 					FileUtils.extractZipFile(getWorkDirectory().concat("/"+TRANSYT_FILE_NAME+"/results.tar.gz"), getWorkDirectory().concat("/"+TRANSYT_FILE_NAME));
 
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "Verifying...");
+					
 					if (verify) {
 						verify=verifyKeys();
 						logger.info("The result of the verification of md5 file was {}", Boolean.toString(verify));

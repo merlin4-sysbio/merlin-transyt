@@ -1,0 +1,24 @@
+#eclipse
+.classpath
+.settings
+.project
+
+#java stuff
+*.class
+*.jar
+
+#build
+/target
+/bin/
+/plugins_bin
+/cache
+/.classpath
+/.project
+
+#eclipse
+.settings
+
+#build folders
+/target
+/test-bin
+/test_bin/
