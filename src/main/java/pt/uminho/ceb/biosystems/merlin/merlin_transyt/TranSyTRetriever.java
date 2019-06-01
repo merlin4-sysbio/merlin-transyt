@@ -54,7 +54,7 @@ import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
  * @author 
  *
  */
-@Operation(name="TranSyT",description="Retrieve results from TranSyT")
+@Operation(name="TranSyT",description="get transporter from TranSyT")
 public class TranSyTRetriever implements Observer {
 
 	private WorkspaceAIB project;
@@ -71,7 +71,7 @@ public class TranSyTRetriever implements Observer {
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
 
 
-	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject")
+	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject", order = 1)
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {
 		
 		this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
@@ -149,11 +149,11 @@ public class TranSyTRetriever implements Observer {
 				Statement stmt = conn.createStatement();
 
 				if(!ModelAPI.checkGenomeSequences(stmt,SequenceType.PROTEIN)) {
-					throw new IllegalArgumentException("Please set the project fasta ('.faa' or '.fna') files!");
+					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
 				}
 				else if(this.project.getTaxonomyID()<0) {
 
-					throw new IllegalArgumentException("Please enter the taxonomic identification from NCBI taxonomy.");
+					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
 
 				stmt.close();
@@ -200,7 +200,8 @@ public class TranSyTRetriever implements Observer {
 					logger.info("DockerID attributed: {}", docker);
 					Boolean go = false;
 					
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, "The files have been submitted. Waiting for the results...");
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, 
+							"files submitted, waiting for results...");
 
 					while (!go &&  !this.cancel.get()) {
 						go = post.getStatus(docker);
@@ -217,7 +218,7 @@ public class TranSyTRetriever implements Observer {
 					if(this.cancel.get())
 						post.closeConnection(docker);
 					
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "The transport reactions are being downloaded.");
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "downloading transport reactions");
 
 					if(!this.cancel.get())
 						verify = post.downloadFile(docker, getWorkDirectory().concat("/"+TRANSYT_FILE_NAME).concat("/results"));
@@ -226,7 +227,7 @@ public class TranSyTRetriever implements Observer {
 					
 					FileUtils.extractZipFile(getWorkDirectory().concat("/"+TRANSYT_FILE_NAME+"/results.tar.gz"), getWorkDirectory().concat("/"+TRANSYT_FILE_NAME));
 
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "Verifying...");
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "verifying...");
 					
 					if (verify) {
 						verify=verifyKeys();
