@@ -76,11 +76,13 @@ public class TranSyTRetriever implements Observer {
 		
 		this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
 
-		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "The required files for TranSyT are being submitted.");
+		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submiting files...");
 
-		if (submitFiles() && !this.cancel.get()) {
+		boolean submitted = submitFiles();
+		
+		if (submitted && !this.cancel.get()) {
 			
-			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "The transport reactions are being integrated.");
+			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "integrating transport reactions...");
 
 			String workspaceName = project.getName();
 
@@ -138,7 +140,7 @@ public class TranSyTRetriever implements Observer {
 		
 		if(project == null) {
 
-			throw new IllegalArgumentException("No New Project Selected!");
+			throw new IllegalArgumentException("no worksapce selected!");
 		}
 		else {
 
