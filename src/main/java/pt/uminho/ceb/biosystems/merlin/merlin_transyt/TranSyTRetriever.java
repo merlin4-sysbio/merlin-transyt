@@ -458,7 +458,7 @@ public class TranSyTRetriever implements Observer {
 	/**
 	 * @return the progress
 	 */
-	@Progress
+	@Progress(progressDialogTitle = "TranSyT annotation", modal = false, workingLabel = "performing TranSyT annotation", preferredWidth = 400, preferredHeight=200)
 	public TimeLeftProgress getProgress() {
 
 		return progress;
