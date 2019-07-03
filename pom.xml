@@ -43,7 +43,7 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>../merlin-aibench/merlin/plugins_bin/merlin-transyt</outputDirectory>
+							<outputDirectory>../merlin-aibench/plugins_bin/merlin-transyt</outputDirectory>
 							<resources>
 								<resource>
 									<directory>target/classes</directory>

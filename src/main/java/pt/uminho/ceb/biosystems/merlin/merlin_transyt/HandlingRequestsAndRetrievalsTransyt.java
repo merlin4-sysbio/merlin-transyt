@@ -134,7 +134,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 * @return Boolean: if the docker status is either 200 or 202 the method returns true or false, respectivelly, otherwise returns null
 	 * @throws IOException
 	 */
-	public Boolean getStatus(String docker) throws IOException {
+	public int getStatus(String docker) throws IOException {
 
 		String uploadUrl = URL.concat("/status");
 
@@ -147,12 +147,15 @@ public class HandlingRequestsAndRetrievalsTransyt {
 		int responseCode = conn.getResponseCode();
 
 		if (responseCode==200) {
-			return true;
+			return responseCode;
 		}
 		else if (responseCode==202) {
-			return false;
+			return responseCode;
 		}
-		return null;
+		else if (responseCode==201) {
+			return responseCode;
+		}
+		return responseCode;
 
 	}
 

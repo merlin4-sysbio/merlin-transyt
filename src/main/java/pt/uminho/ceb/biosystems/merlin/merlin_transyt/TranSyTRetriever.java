@@ -51,10 +51,10 @@ import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 
 /**
- * @author 
+ * @author João Capela
  *
  */
-@Operation(name="TranSyT",description="get transporter from TranSyT")
+@Operation(name="TranSyT",description="Get transporters from TranSyT")
 public class TranSyTRetriever implements Observer {
 
 	private WorkspaceAIB project;
@@ -129,6 +129,8 @@ public class TranSyTRetriever implements Observer {
 		else {
 			Workbench.getInstance().error("error while doing the operation! please try again");
 		}
+		
+		
 	}
 
 
@@ -200,23 +202,32 @@ public class TranSyTRetriever implements Observer {
 
 				try {
 					logger.info("DockerID attributed: {}", docker);
-					Boolean go = false;
-					
+					int responseCode = -1;
+
 					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, 
 							"files submitted, waiting for results...");
 
-					while (!go &&  !this.cancel.get()) {
-						go = post.getStatus(docker);
+					while (responseCode!=200 &&  !this.cancel.get()) {
 
-						if(go == null) {  
+						responseCode = post.getStatus(docker);
+
+						if(responseCode == -1) {  
 							logger.error("Error!");
-							post.closeConnection(docker);
 							System.exit(1);
 						}
+						else if (responseCode==503) {
+							Workbench.getInstance().warn("The server cannot handle the submission due to capacity overload. Please try again later!");
+							System.exit(1);
+						}
+						else if (responseCode==500) {
+							Workbench.getInstance().warn("Something went wrong while processing the request, please try again");
+							System.exit(1);
+						}
+						
 
 						TimeUnit.SECONDS.sleep(3);
-					}
-					
+						}
+
 					if(this.cancel.get())
 						post.closeConnection(docker);
 					
@@ -244,8 +255,10 @@ public class TranSyTRetriever implements Observer {
 					post.closeConnection(docker);
 					e.printStackTrace();
 				}
-
 			}
+
+			
+
 			else
 				logger.error("No dockerID attributed!");
 		} 
@@ -366,7 +379,7 @@ public class TranSyTRetriever implements Observer {
 			File transytFile = new File(getWorkDirectory().concat("/transyt"));
 
 			if (transytFile.exists()) {
-				transytFile.delete();
+				FileUtils.deleteDirectory(transytFile);
 			} 
 
 			transytFile.mkdir(); //creation of a directory to put the required files
@@ -460,7 +473,7 @@ public class TranSyTRetriever implements Observer {
 	/**
 	 * @return the progress
 	 */
-	@Progress(progressDialogTitle = "TranSyT annotation", modal = false, workingLabel = "performing TranSyT annotation", preferredWidth = 400, preferredHeight=200)
+	@Progress(progressDialogTitle = "TranSyT annotation", modal = false, workingLabel = "Performing TranSyT annotation", preferredWidth = 400, preferredHeight=300)
 	public TimeLeftProgress getProgress() {
 
 		return progress;
