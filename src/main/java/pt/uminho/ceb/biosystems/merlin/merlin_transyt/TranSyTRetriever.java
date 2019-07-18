@@ -46,6 +46,7 @@ import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
 import pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI.ModelAPI;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
+import pt.uminho.ceb.biosystems.merlin.services.model.ModelGenesServices;
 import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
@@ -147,10 +148,8 @@ public class TranSyTRetriever implements Observer {
 			this.project = project;
 
 			try {
-				Connection conn = new Connection(project.getDatabase().getDatabaseAccess());
-				Statement stmt = conn.createStatement();
 
-				if(!ModelAPI.checkGenomeSequences(stmt,SequenceType.PROTEIN)) {
+				if(!ModelGenesServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
 					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
 				}
 				else if(this.project.getTaxonomyID()<0) {
@@ -158,11 +157,10 @@ public class TranSyTRetriever implements Observer {
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
 
-				stmt.close();
-				conn.closeConnection();
-
-			} catch (SQLException e1) {
-				e1.printStackTrace();
+			} 
+			catch (Exception e) {
+				Workbench.getInstance().error(e);
+				e.printStackTrace();
 			}
 		}
 	}
