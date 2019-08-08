@@ -420,7 +420,7 @@ public class TranSyTRetriever implements Observer {
 
 		List<String> ret = new ArrayList<>();
 
-		String query = "SELECT DISTINCT(kegg_id) FROM model_compound INNER JOIN model_stoichiometry ON idcompound = compound_idcompound INNER JOIN model_reaction ON idreaction = reaction_idreaction WHERE inModel;";
+		String query = "SELECT DISTINCT(external_identifier) FROM model_compound INNER JOIN model_stoichiometry ON idcompound = model_compound_idcompound INNER JOIN model_reaction ON idreaction = model_reaction_idreaction WHERE inModel;";
 
 		ResultSet rs = statement.executeQuery(query);
 
