@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class HandlingRequestsAndRetrievalsTransyt {
 
 //	private static final String URL = "http://transytmanager.rosalind.di.uminho.pt";
-	private static final String URL = "http://rosalind.di.uminho.pt:8085/";
+	private static final String URL = "http://rosalind.di.uminho.pt:8085";
 
 	final static Logger logger = LoggerFactory.getLogger(HandlingRequestsAndRetrievalsTransyt.class);
 	
@@ -65,7 +65,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 				PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 				) {
 			for (File file : this.requiredFiles){
-				logger.info("File path coiser: " + file.getAbsolutePath());
+				logger.info("File path: " + file.getAbsolutePath());
 				// Send normal param.
 				writer.append("--" + boundary).append(CRLF);
 				writer.append("Content-Disposition: form-data; name=\"param\"").append(CRLF);

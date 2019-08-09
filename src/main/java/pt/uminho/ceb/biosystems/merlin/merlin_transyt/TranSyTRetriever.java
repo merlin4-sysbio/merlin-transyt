@@ -13,11 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,25 +38,16 @@ import es.uvigo.ei.aibench.core.operation.annotation.Port;
 import es.uvigo.ei.aibench.core.operation.annotation.Progress;
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
-import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceTableAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.annotation.AnnotationCompartmentsAIB;
-import pt.uminho.ceb.biosystems.merlin.aibench.utilities.AIBenchUtils;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
-import pt.uminho.ceb.biosystems.merlin.biocomponents.io.Enumerators.SBMLLevelVersion;
-import pt.uminho.ceb.biosystems.merlin.biocomponents.io.writers.SBMLWriter;
 import pt.uminho.ceb.biosystems.merlin.compartments.datatype.AnnotationCompartmentsGenes;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
-import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceGenericDataTable;
-import pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI.ModelAPI;
 import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
-import pt.uminho.ceb.biosystems.merlin.merlin_biocoiso.BiocoisoUtilities;
-import pt.uminho.ceb.biosystems.merlin.merlin_biocoiso.HandlingRequestsAndRetrievalsBiocoiso;
-import pt.uminho.ceb.biosystems.merlin.merlin_biocoiso.datatypes.ValidationBiocoisoAIB;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelGenesServices;
+import pt.uminho.ceb.biosystems.merlin.services.model.ModelMetabolitesServices;
 import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
-import pt.uminho.ceb.biosystems.mew.utilities.datastructures.pair.Pair;
 
 
 /**
@@ -80,6 +66,7 @@ public class TranSyTRetriever implements Observer {
 	private String message;
 	public static final String TRANSYT_FILE_NAME = "transyt";
 	private String transytResultsFile;
+	private String transytDirectory;
 
 
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
@@ -88,74 +75,72 @@ public class TranSyTRetriever implements Observer {
 	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject", order = 1)
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {
 		
-		this.project = project;
-		
-		creationOfRequiredFiles();
+		try {
+			transytDirectory = this.getTransytDirectory();
+			
+			this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
 
-		this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
+			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
+			boolean submitted = submitFiles();
 
-		
-		boolean submitted = false; //submitFiles();
-
-		if (submitted && !this.cancel.get()) {
+			if (submitted && !this.cancel.get()) {
 
 
-			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "Rendering results...");
+				this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "Rendering results...");
 
-			logger.info("The files for BioCoISO were submitted successfully");
+				logger.info("The files for TranSyT were submitted successfully");
 
-			Workbench.getInstance().info("The files for BioCoISO were submitted successfully");
+				Workbench.getInstance().info("The files for TranSyT were submitted successfully");
 
-			executeOperation();
-		}
-		else if(this.cancel.get()) {
-			Workbench.getInstance().warn("operation canceled!");
-		}
-		else {
-			Workbench.getInstance().error("error while doing the operation! please try again");
+				executeOperation();
+			}
+			else if(this.cancel.get()) {
+				Workbench.getInstance().warn("operation canceled!");
+			}
+			else {
+				Workbench.getInstance().error("error while doing the operation! please try again");
 
-			executeOperation();
+				executeOperation();
 
+			}
+		} catch (Exception e) {
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
 		}
 
 	}
 
 
-private void executeOperation() throws IOException, ParseException {
+private void executeOperation() throws Exception {
 		
-		int table_number = this.project.getDatabase().getValidation().getEntities().size() + 1;
+	Connection conn = new Connection(project.getDatabase().getDatabaseAccess());
+	Statement statement = conn.createStatement();
 
-		String name = "BioCoISO_" + Integer.toString(table_number);
+	Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
 
-		String[] columnsName = new String[] {"info","metabolite","flux", "children", "description"};
+	AnnotationCompartmentsAIB c = null;
 
-		WorkspaceTableAIB table = new WorkspaceTableAIB(name, columnsName , this.project.getName(), new Connection(this.project.getDatabase().getDatabaseAccess()));
+	for(WorkspaceEntity e: project.getDatabase().getAnnotations().getEntitiesList())
+		if(e.getName().equalsIgnoreCase("compartments"))
+			c=(AnnotationCompartmentsAIB) e;
 
-		Pair<WorkspaceGenericDataTable, Map<?,?>> filledTableAndNextLevel = this.createDataTable(this.getWorkDirectory().concat("/biocoiso/results.json"), Arrays.asList(columnsName), this.project.getName(), name);
+	if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
+		geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
 
-		ValidationBiocoisoAIB biocoiso = new ValidationBiocoisoAIB(table, name, filledTableAndNextLevel.getB());
+	ParamSpec[] paramsSpec = new ParamSpec[]{
+			new ParamSpec("compartments", Map.class, geneCompartment, null),
+			new ParamSpec("transytResultPath", String.class, transytResultsFile, null),
+			new ParamSpec("workspace", WorkspaceAIB.class, project, null)
+	};
+	for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
+		if (def.getID().equals("operations.ModelTransporterstoIntegration.ID")){
 
-		Connection connection = new Connection(this.msqlmt);
-
-		biocoiso.setConnection(connection); 
-
-		biocoiso.setWorkspace(this.project);
-
-		biocoiso.setMainTableData(filledTableAndNextLevel.getA());
-
-		biocoiso.setData(filledTableAndNextLevel.getA());
-
-		ArrayList<WorkspaceEntity> newList = new ArrayList<WorkspaceEntity>();
-
-		for (WorkspaceEntity entity : this.project.getDatabase().getValidation().getEntities()) {
-			newList.add(entity);
+			Workbench.getInstance().executeOperation(def, paramsSpec);
 		}
+	}
 
-		newList.add(biocoiso);
-
-		this.project.getDatabase().getValidation().setEntities(newList);
+	conn.closeConnection();	
 		
 	}
 
@@ -163,19 +148,19 @@ private void executeOperation() throws IOException, ParseException {
 	/**
 	 * @param project
 	 */
-	public void checkNewProject(String workspaceName) {
+	public void checkNewProject(WorkspaceAIB project) {
 
-		if(workspaceName == "") {
+		if(project == null) {
 
-			throw new IllegalArgumentException("no workspace selected!");
+			throw new IllegalArgumentException("no worksapce selected!");
 		}
 		else {
 
-			this.project = AIBenchUtils.getProject(workspaceName);;
+			this.project = project;
 
 			try {
 
-				if(!ModelGenesServices.checkGenomeSequences(workspaceName, SequenceType.PROTEIN)) {
+				if(!ModelGenesServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
 					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
 				}
 				else if(this.project.getTaxonomyID()<0) {
@@ -183,7 +168,8 @@ private void executeOperation() throws IOException, ParseException {
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
 
-			} catch (Exception e) {
+			} 
+			catch (Exception e) {
 				Workbench.getInstance().error(e);
 				e.printStackTrace();
 			}
@@ -194,7 +180,7 @@ private void executeOperation() throws IOException, ParseException {
 
 	/////////////////////////////////////////////////////
 
-	/**This method allows the submission of the required files for BioCoISO into the web server, the download of the results and the verification 
+	/**This method allows the submission of the required files for TranSyT into the web server, the download of the results and the verification 
 	 * of the md5 key as well as show error and warning messages
 	 * @return boolean informing whether the submission went well or not.
 	 * @throws Exception 
@@ -207,7 +193,7 @@ private void executeOperation() throws IOException, ParseException {
 			return false;
 		}
 
-		HandlingRequestsAndRetrievalsBiocoiso post = new HandlingRequestsAndRetrievalsBiocoiso(requiredFiles);
+		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles);
 
 		String submissionID = "";
 
@@ -251,64 +237,64 @@ private void executeOperation() throws IOException, ParseException {
 					}
 
 
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "downloading BioCoISO results");
+					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "downloading TranSyT results");
 
 					if(!this.cancel.get())
-						verify = post.downloadFile(submissionID, getWorkDirectory().concat("/"+BIOCOISO_FILE_NAME).concat("/results.zip"));
+						verify = post.downloadFile(submissionID, this.transytDirectory.concat("/results.zip"));
 
 
 					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "verifying...");
 
-					biocoisoResultsFile = getWorkDirectory().concat("/"+BIOCOISO_FILE_NAME).concat("/results/");
+					transytResultsFile = this.transytDirectory.concat("results/");
 
-					FileUtils.extractZipFile(getWorkDirectory().concat("/"+BIOCOISO_FILE_NAME).concat("/results.zip"), biocoisoResultsFile);
+					FileUtils.extractZipFile(this.transytDirectory.concat("/results.zip"), transytResultsFile);
 
-					File checksumFile = new File(biocoisoResultsFile.concat("/checksum.md5"));
+					File checksumFile = new File(transytResultsFile.concat("/checksum.md5"));
 
 					if (!checksumFile.exists()) {
 
-						File folder = new File(biocoisoResultsFile);
+						File folder = new File(transytResultsFile);
 						File[] listOfFiles = folder.listFiles();
 
 						boolean stop=false;
 
-						int i = 0;
+						int i = 0;  //create errors dictionary!!!
 
 						//The following code will show different error and warning messages to merlin users depending on the error founded
 
-						while (!stop && i<listOfFiles.length) {
-							if (listOfFiles[i].getName().equals("1") ) {
-								Workbench.getInstance().warn("Fail loading the model");
-								stop = true;
-								verify=false;
-							}
-							else if (listOfFiles[i].getName().equals("2") ){
-								Workbench.getInstance().warn("CPLEX was not found");
-								stop = true;
-								verify=false;
-							}
-							else if (listOfFiles[i].getName().equals("3") ){
-								Workbench.getInstance().warn("There is no Biomass reaction or its ID is incorrect");
-								stop = true;
-								verify=false;
-							}
-							else if (listOfFiles[i].getName().equals("4") ){
-								Workbench.getInstance().warn("The protein name is incorrect");
-								stop = true;
-								verify=false;
-							}
-							else if (listOfFiles[i].getName().equals("5") ){
-								Workbench.getInstance().warn("The output file name is incorrect");
-								stop = true;
-								verify=false;
-							}
-							else if (listOfFiles[i].getName().equals("6") ) {
-								Workbench.getInstance().warn("One or more files are not correctly named");
-								stop = true;
-								verify=false;
-							}
-							i++;
-						}
+//						while (!stop && i<listOfFiles.length) {
+//							if (listOfFiles[i].getName().equals("1") ) {
+//								Workbench.getInstance().warn("Fail loading the model");
+//								stop = true;
+//								verify=false;
+//							}
+//							else if (listOfFiles[i].getName().equals("2") ){
+//								Workbench.getInstance().warn("CPLEX was not found");
+//								stop = true;
+//								verify=false;
+//							}
+//							else if (listOfFiles[i].getName().equals("3") ){
+//								Workbench.getInstance().warn("There is no Biomass reaction or its ID is incorrect");
+//								stop = true;
+//								verify=false;
+//							}
+//							else if (listOfFiles[i].getName().equals("4") ){
+//								Workbench.getInstance().warn("The protein name is incorrect");
+//								stop = true;
+//								verify=false;
+//							}
+//							else if (listOfFiles[i].getName().equals("5") ){
+//								Workbench.getInstance().warn("The output file name is incorrect");
+//								stop = true;
+//								verify=false;
+//							}
+//							else if (listOfFiles[i].getName().equals("6") ) {
+//								Workbench.getInstance().warn("One or more files are not correctly named");
+//								stop = true;
+//								verify=false;
+//							}
+//							i++;
+//						}
 					}
 					else if (verify) {
 						verify=verifyKeys();
@@ -337,12 +323,12 @@ private void executeOperation() throws IOException, ParseException {
 	 * This method gives the name of the current working directory
 	 * @return a {@code String} with the path for the working directory
 	 */
-	private  String getWorkDirectory() {
-		String database = this.project.getDatabase().getDatabaseName();
+	private  String getTransytDirectory() {
+		String database = this.project.getName();
 
 		Long taxonomyID= this.project.getTaxonomyID();
 
-		String path = FileUtils.getWorkspaceTaxonomyFolderPath(database, taxonomyID);
+		String path = FileUtils.getWorkspaceTaxonomyFolderPath(database, taxonomyID).concat("transyt/");
 
 		return path;
 
@@ -356,15 +342,13 @@ private void executeOperation() throws IOException, ParseException {
 	 */
 	private boolean verifyKeys() throws IOException, NoSuchAlgorithmException {
 
-		String path = getWorkDirectory().concat("/"+BIOCOISO_FILE_NAME+"/results");
-
 		MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-		File file = new File(path.concat("/result.csv"));
+		File file = new File(this.transytResultsFile.concat("/result.csv"));
 
 		String checksum = getFileChecksum(md5Digest, file);
 
-		String key = readWordInFile(path.concat("/checksum.md5"));
+		String key = readWordInFile(this.transytResultsFile.concat("/checksum.md5"));
 
 		if(checksum.equals(key)) {
 			return true;
@@ -448,7 +432,7 @@ private void executeOperation() throws IOException, ParseException {
 	}
 
 	/**
-	 * This method generates the required files for BioCoISO to run. A file with the biomass reaction id, another with the protein's name and the model.
+	 * This method generates the required files for TranSyT to run. A file with the biomass reaction id, another with the protein's name and the model.
 	 * @return List<File> with the required files.
 	 * @throws Exception
 	 */
@@ -456,55 +440,52 @@ private void executeOperation() throws IOException, ParseException {
 
 		List<File> requiredFiles = new ArrayList<>();
 
-		File biocoisoFolder = new File(getWorkDirectory().concat("/biocoiso"));
+		File transytFolder = new File(this.transytDirectory);
 
-		if(biocoisoFolder.exists()) {
-			FileUtils.deleteDirectory(biocoisoFolder);
+		if(transytFolder.exists()) {
+			FileUtils.deleteDirectory(transytFolder);
 		}
 
-		biocoisoFolder.mkdir(); //creation of a directory to put the required files
+		transytFolder.mkdir(); //creation of a directory to put the required files
 
+		String workspaceFolder = FileUtils.getWorkspaceTaxonomyFolderPath(this.project.getName(), this.project.getTaxonomyID());
 
-		SBMLWriter sBMLWriter = new SBMLWriter(this.project.getName(), this.msqlmt, 
-				biocoisoFolder.toString().concat("/model.xml"),
-				project.getName(), 
-				ProjectServices.isCompartmentalisedModel(this.project.getDatabase().getDatabaseName()), 
-				false,
-				"e-Biomass", 
-				SBMLLevelVersion.L2V1);
+		File proteinFile2 = new File(workspaceFolder.concat("protein.faa"));
+		
+		File genomeFile = new File(this.transytDirectory.concat("genome.faa"));
+		
+		Files.copy(proteinFile2.toPath(), genomeFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		
+//		org.apache.commons.io.FileUtils.copyDirectory(proteinFile2, genomeFile);
+		
+//		String proteinFileName = "genome.faa";
+//
+//		File proteinFile = new File(g);
 
-		sBMLWriter.getDataFromDatabase();
+		requiredFiles.add(0,genomeFile);
 
-		sBMLWriter.toSBML(true);
+		File taxIDFile = new File(this.transytDirectory.concat("/taxID.txt"));
 
+		FileWriter writer = new FileWriter(taxIDFile);
 
-		saveWordInFile(biocoisoFolder.toString().concat("/reaction.txt"), this.reaction);
+		writer.append(Long.toString(this.project.getTaxonomyID()));
 
-		saveWordInFile(biocoisoFolder.toString().concat("/level.txt"), this.level);
+		writer.close();
 
-		File reactionFile = new File(biocoisoFolder.toString().concat("/reaction.txt"));
+		requiredFiles.add(1,taxIDFile);
 
-		File levelFile = new File(biocoisoFolder.toString().concat("/level.txt"));
+		File metabolitesFile = new File(this.transytDirectory.concat("/metabolites.txt"));
 
+		List<String> metabolites = ModelMetabolitesServices.getAllCompoundsInModel(this.project.getName());
+		
+		if(metabolites == null || metabolites.isEmpty())
+			throw new Exception("no metabolites found present in the model!");
 
-		File modelFile = new File(biocoisoFolder.toString().concat("/model.xml"));
+		saveWordsInFile(this.transytDirectory.concat("/metabolites.txt"),metabolites);
 
-		if (modelFile.exists() && reactionFile.exists() && levelFile.exists()) {
+		requiredFiles.add(2,metabolitesFile);
 
-			requiredFiles.add(reactionFile);
-
-			requiredFiles.add(levelFile);
-
-			requiredFiles.add(modelFile);
-
-			return requiredFiles;
-
-		}
-		else
-			return null;
-
-
-
+		return requiredFiles;
 
 	}
 
@@ -553,40 +534,11 @@ private void executeOperation() throws IOException, ParseException {
 
 
 	}
-
-	/**
-	 * This method creates the data table with the results. This table will be rendered in BioCoISO's view.
-	 * @param file
-	 * @param columnsNames
-	 * @param name
-	 * @param windowName
-	 * @return WorkspaceGenericDataTable with the results.
-	 * @throws IOException
-	 * @throws ParseException 
-	 */
-
-	public Pair<WorkspaceGenericDataTable, Map<?,?>> createDataTable(String file, List<String> columnsNames, String name, String windowName) throws IOException, ParseException {
-
-		JSONParser jsonParser = new JSONParser();
-
-		try (FileReader reader = new FileReader(file))
-		{
-			//Read JSON file
-			Object obj = (JSONObject) jsonParser.parse(reader);
-
-			JSONObject jo = (JSONObject) obj; 
-			this.resultMap = (Map<?, ?>) jo; //level 1
-			Pair<WorkspaceGenericDataTable, Map<?,?>> tableAndNextLevel = BiocoisoUtilities.tableCreator(resultMap, name, windowName, "M_fictitious");
-			
-			return tableAndNextLevel;
-		}}
-	
-
 	
 	/**
 	 * @return the progress
 	 */
-	@Progress(progressDialogTitle = "BioCoISO", modal = false, workingLabel = "BioCoISO is running...", preferredWidth = 400, preferredHeight=300)
+	@Progress(progressDialogTitle = "TranSyT", modal = false, workingLabel = "TranSyT is running...", preferredWidth = 400, preferredHeight=300)
 	public TimeLeftProgress getProgress() {
 
 		return progress;

@@ -1,18 +1,13 @@
 package pt.uminho.ceb.biosystems.merlin.merlin_transyt;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import pt.uminho.ceb.biosystems.merlin.database.connector.databaseAPI.ModelAPI;
+import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 public class App 
@@ -25,142 +20,145 @@ public class App
 	 */
 	public static void main( String[] args ) throws IOException, NoSuchAlgorithmException, InterruptedException 
 
-	//		System.out.println(TranSyTRetriever.verifyKeys());
-	//		FileUtils.createZipFile("C:\\Users\\mario\\Desktop\\transyt\\", "C:\\Users\\mario\\Desktop\\transyt.tar.gz", 5);
-	//		FileUtils.extractZipFile("C:\\Users\\mario\\Desktop\\teste2.tar.gz", "C:\\Users\\mario\\Desktop\\teste3");
-
 	{
 
-//		File textFile = new File("C:\\Users\\mario\\Desktop\\teste2\\metabolites.txt");
-//		File textFile2 = new File("C:\\Users\\mario\\Desktop\\teste2\\genome.faa");
-//		File textFile3 = new File("C:\\Users\\mario\\Desktop\\teste2\\taxID.txt");
-		
-		File textFile = new File("C:\\Users\\mario\\Desktop\\teste3\\metabolites.txt");
-		File textFile2 = new File("C:\\Users\\mario\\Desktop\\teste3\\genome.faa");
-		File textFile3 = new File("C:\\Users\\mario\\Desktop\\teste3\\taxID.txt");
+		String transytDirectory = "/Users/davidelagoa/Desktop/transyt/";
+		String transytResultsFile;
+
+		File textFile = new File("/Users/davidelagoa/Downloads/metabolites.txt");
+		File textFile2 = new File("/Users/davidelagoa/Downloads/genome.faa");
+		File textFile3 = new File("/Users/davidelagoa/Downloads/taxID.txt");
 
 		List<File> requiredFiles = new ArrayList<>();
 
-		requiredFiles.add(0,textFile);
-		requiredFiles.add(1,textFile2);
-		requiredFiles.add(2,textFile3);
+		requiredFiles.add(textFile);
+		requiredFiles.add(textFile2);
+		requiredFiles.add(textFile3);
 
 		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles);
-		String docker= "";
 
-		docker = post.postFiles();
-		System.out.println(docker);
-		//post.downloadFile();
+		String submissionID = "";
 
-		if(docker!=null) {
-			Boolean go = false;
+		boolean verify = false;
 
-			while (!go) {
-				go = post.getStatus(docker);
+		try {
 
-				if(go == null) {
-					System.out.println("Error!");
-					System.exit(1);
+			submissionID = post.postFiles();
+
+			if(submissionID!=null) {
+
+				try {
+					System.out.println("SubmissionID attributed: " + submissionID);
+					int responseCode = -1;
+
+				
+					System.out.println("files submitted, waiting for results...");
+
+					while (responseCode!=200) {
+
+						responseCode = post.getStatus(submissionID);
+
+						if(responseCode == -1) {  
+							System.out.println("Error!");
+							System.exit(1);
+						}
+						else if (responseCode==503) {
+							Workbench.getInstance().warn("The server cannot handle the submission due to capacity overload. Please try again later!");
+							System.exit(1);
+						}
+						else if (responseCode==500) {
+							Workbench.getInstance().warn("Something went wrong while processing the request, please try again");
+							System.exit(1);
+						}
+						else if (responseCode == 400) {
+							Workbench.getInstance().warn("The submitted files are fewer than expected");
+							System.exit(1);
+						}
+
+						TimeUnit.SECONDS.sleep(3);
+					}
+
+
+					System.out.println("downloading TranSyT results");
+
+					verify = post.downloadFile(submissionID, transytDirectory.concat("/results.zip"));
+
+
+					System.out.println("verifying...");
+
+					transytResultsFile = transytDirectory.concat("results/");
+
+					FileUtils.extractZipFile(transytDirectory.concat("/results.zip"), transytResultsFile);
+
+					File checksumFile = new File(transytResultsFile.concat("/checksum.md5"));
+
+					if (!checksumFile.exists()) {
+
+						File folder = new File(transytResultsFile);
+						File[] listOfFiles = folder.listFiles();
+
+						boolean stop=false;
+
+						int i = 0;  //create errors dictionary!!!
+
+						//The following code will show different error and warning messages to merlin users depending on the error founded
+
+						//						while (!stop && i<listOfFiles.length) {
+						//							if (listOfFiles[i].getName().equals("1") ) {
+						//								Workbench.getInstance().warn("Fail loading the model");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("2") ){
+						//								Workbench.getInstance().warn("CPLEX was not found");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("3") ){
+						//								Workbench.getInstance().warn("There is no Biomass reaction or its ID is incorrect");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("4") ){
+						//								Workbench.getInstance().warn("The protein name is incorrect");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("5") ){
+						//								Workbench.getInstance().warn("The output file name is incorrect");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("6") ) {
+						//								Workbench.getInstance().warn("One or more files are not correctly named");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							i++;
+						//						}
+					}
+					else if (verify) {
+						//verify=verifyKeys();
+						System.out.println("The result of the verification of md5 file was " + Boolean.toString(verify));
+					}
+
+					System.out.println( verify);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
 				}
 
-				TimeUnit.SECONDS.sleep(3);
-			} 
+			}
+			else
+				System.out.println("No dockerID attributed!");
+		} 
+		catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error submitting files");
 
-			post.downloadFile(docker,"C:\\Users\\mario\\Desktop\\test");
-
-			//				MessageDigest md5Digest = MessageDigest.getInstance("MD5");
-			//
-			//				FileUtils.extractZipFile("C:\\Users\\mario\\Desktop\\test".concat(".tar.gz"), "C:\\Users\\mario\\Desktop");
-			//
-			//				File file = new File("C:\\Users\\mario\\Desktop\\results".concat("/transyt.xml"));
-			//
-			//				String checksum = getFileChecksum(md5Digest, file);
-			//
-			//				String key = readWordInFile("C:\\Users\\mario\\Desktop\\results".concat("/checksum.md5"));
-			//
-			//				System.out.println(checksum);
-			//
-			//				System.out.println(key);
-
-			post.closeConnection(docker);
-
-			//		File transytFile = new File("C:\\Users\\mario\\Desktop\\".concat("/transytteste"));
-			//
-			//		transytFile.mkdir();
-			//
-			//		File taxID = new File("C:\\Users\\mario\\Desktop\\transytteste\\tax.txt");
-			//
-			//		FileWriter writer = new FileWriter(taxID);
-			//
-			//		writer.append("3456");
-			//
-			//		writer.close();
-		}}}
-
-
-		//catch (Exception e) {
-		//	post.closeConnection(docker);
-		//}}
-		//
-		//private static String getFileChecksum(MessageDigest digest, File file) throws IOException
-		//{
-		//	//Get file input stream for reading the file content
-		//	FileInputStream fis = new FileInputStream(file);
-		//
-		//	//Create byte array to read data in chunks
-		//	byte[] byteArray = new byte[1024];
-		//	int bytesCount = 0;
-		//
-		//	//Read file data and update in message digest
-		//	while ((bytesCount = fis.read(byteArray)) != -1) {
-		//		digest.update(byteArray, 0, bytesCount);
-		//	};
-		//
-		//	//close the stream; We don't need it now.
-		//	fis.close();
-		//
-		//	//Get the hash's bytes
-		//	byte[] bytes = digest.digest();
-		//
-		//	//This bytes[] has bytes in decimal format;
-		//	//Convert it to hexadecimal format
-		//	StringBuilder sb = new StringBuilder();
-		//	for(int i=0; i< bytes.length ;i++)
-		//	{
-		//		sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
-		//	}
-		//
-		//	//return complete hash
-		//	return sb.toString();
-		//}
-		//
-		//public static String readWordInFile(String path){
-		//
-		//	try {
-		//
-		//		BufferedReader reader = new BufferedReader(new FileReader(path));
-		//
-		//		String line;
-		//
-		//		while ((line = reader.readLine()) != null) {
-		//
-		//			if(!line.isEmpty() &&  !line.contains("**")) {
-		//
-		//				reader.close();
-		//				return line.trim();
-		//			}
-		//		}
-
-		//		reader.close();
-		//
-		//	} 
-		//	catch (IOException e) {
-		//		e.printStackTrace();
-		//
-		//	}
-		//	return null;
-		//} 
-		//}
+		}
+	}
+}
 
 
 
