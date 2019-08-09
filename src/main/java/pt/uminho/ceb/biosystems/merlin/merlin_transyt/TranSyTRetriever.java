@@ -126,8 +126,9 @@ private void executeOperation() throws Exception {
 
 	if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 		geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
-
-	transytResultsFile = "C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\results\\transyt.xml";
+	
+	// apagar isto no final
+	transytResultsFile = "C:\\Users\\Diogo\\Downloads\\transyt.xml";
 	
 	ParamSpec[] paramsSpec = new ParamSpec[]{
 			new ParamSpec("compartments", Map.class, geneCompartment, null),
