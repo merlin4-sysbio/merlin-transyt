@@ -82,7 +82,8 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-			boolean submitted = submitFiles();
+//			boolean submitted = submitFiles();
+			boolean submitted = true;
 
 			if (submitted && !this.cancel.get()) {
 
@@ -100,8 +101,6 @@ public class TranSyTRetriever implements Observer {
 			}
 			else {
 				Workbench.getInstance().error("error while doing the operation! please try again");
-
-				executeOperation();
 
 			}
 		} catch (Exception e) {
@@ -128,6 +127,8 @@ private void executeOperation() throws Exception {
 	if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 		geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
 
+	transytResultsFile = "C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\results\\transyt.xml";
+	
 	ParamSpec[] paramsSpec = new ParamSpec[]{
 			new ParamSpec("compartments", Map.class, geneCompartment, null),
 			new ParamSpec("transytResultPath", String.class, transytResultsFile, null),
