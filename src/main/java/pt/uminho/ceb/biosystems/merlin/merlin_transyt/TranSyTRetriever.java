@@ -126,11 +126,9 @@ private void executeOperation() throws Exception {
 	if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 		geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
 	
-	System.out.println(transytResultsFile);
-	
 	ParamSpec[] paramsSpec = new ParamSpec[]{
 			new ParamSpec("compartments", Map.class, geneCompartment, null),
-			new ParamSpec("transytResultPath", String.class, transytResultsFile, null),
+			new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
 			new ParamSpec("workspace", WorkspaceAIB.class, project, null)
 	};
 	for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
@@ -187,17 +185,7 @@ private void executeOperation() throws Exception {
 	 */
 	public boolean submitFiles() throws Exception {
 
-		List<File> requiredFiles = null;//creationOfRequiredFiles();
-
-		File textFile = new File("C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\metabolites.txt");
-		File textFile2 = new File("C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\genome.faa");
-		File textFile3 = new File("C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\taxID.txt");
-
-		requiredFiles = new ArrayList<>();
-
-		requiredFiles.add(textFile);
-		requiredFiles.add(textFile2);
-		requiredFiles.add(textFile3);
+		List<File> requiredFiles = creationOfRequiredFiles();
 		
 		if (requiredFiles == null) {
 			return false;
@@ -354,7 +342,7 @@ private void executeOperation() throws Exception {
 
 		MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-		File file = new File(this.transytResultsFile.concat("/result.xml"));
+		File file = new File(this.transytResultsFile.concat("/transyt.xml"));
 
 		String checksum = getFileChecksum(md5Digest, file);
 
