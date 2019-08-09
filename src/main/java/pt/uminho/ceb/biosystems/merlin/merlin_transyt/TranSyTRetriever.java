@@ -82,8 +82,7 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-//			boolean submitted = submitFiles();
-			boolean submitted = true;
+			boolean submitted = submitFiles();
 
 			if (submitted && !this.cancel.get()) {
 
@@ -127,8 +126,7 @@ private void executeOperation() throws Exception {
 	if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 		geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
 	
-	// apagar isto no final
-	transytResultsFile = "C:\\Users\\Diogo\\Downloads\\transyt.xml";
+	System.out.println(transytResultsFile);
 	
 	ParamSpec[] paramsSpec = new ParamSpec[]{
 			new ParamSpec("compartments", Map.class, geneCompartment, null),
@@ -189,8 +187,18 @@ private void executeOperation() throws Exception {
 	 */
 	public boolean submitFiles() throws Exception {
 
-		List<File> requiredFiles = creationOfRequiredFiles();
+		List<File> requiredFiles = null;//creationOfRequiredFiles();
 
+		File textFile = new File("C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\metabolites.txt");
+		File textFile2 = new File("C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\genome.faa");
+		File textFile3 = new File("C:\\Users\\BioSystems\\Desktop\\enecator\\transyt\\taxID.txt");
+
+		requiredFiles = new ArrayList<>();
+
+		requiredFiles.add(textFile);
+		requiredFiles.add(textFile2);
+		requiredFiles.add(textFile3);
+		
 		if (requiredFiles == null) {
 			return false;
 		}
@@ -346,7 +354,7 @@ private void executeOperation() throws Exception {
 
 		MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-		File file = new File(this.transytResultsFile.concat("/result.csv"));
+		File file = new File(this.transytResultsFile.concat("/result.xml"));
 
 		String checksum = getFileChecksum(md5Digest, file);
 
