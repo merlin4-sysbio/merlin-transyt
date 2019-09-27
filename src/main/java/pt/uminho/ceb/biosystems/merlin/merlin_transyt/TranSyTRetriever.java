@@ -74,10 +74,10 @@ public class TranSyTRetriever implements Observer {
 
 	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject", order = 1)
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {
-		
+
 		try {
 			transytDirectory = this.getTransytDirectory();
-			
+
 			this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
@@ -110,36 +110,36 @@ public class TranSyTRetriever implements Observer {
 	}
 
 
-private void executeOperation() throws Exception {
-		
-	Connection conn = new Connection(project.getDatabase().getDatabaseAccess());
-	Statement statement = conn.createStatement();
+	private void executeOperation() throws Exception {
 
-	Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
+		Connection conn = new Connection(project.getDatabase().getDatabaseAccess());
+		Statement statement = conn.createStatement();
 
-	AnnotationCompartmentsAIB c = null;
+		Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
 
-	for(WorkspaceEntity e: project.getDatabase().getAnnotations().getEntitiesList())
-		if(e.getName().equalsIgnoreCase("compartments"))
-			c=(AnnotationCompartmentsAIB) e;
+		AnnotationCompartmentsAIB c = null;
 
-	if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
-		geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
-	
-	ParamSpec[] paramsSpec = new ParamSpec[]{
-			new ParamSpec("compartments", Map.class, geneCompartment, null),
-			new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
-			new ParamSpec("workspace", WorkspaceAIB.class, project, null)
-	};
-	for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
-		if (def.getID().equals("operations.ModelTransporterstoIntegration.ID")){
+		for(WorkspaceEntity e: project.getDatabase().getAnnotations().getEntitiesList())
+			if(e.getName().equalsIgnoreCase("compartments"))
+				c=(AnnotationCompartmentsAIB) e;
 
-			Workbench.getInstance().executeOperation(def, paramsSpec);
+		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
+			geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
+
+		ParamSpec[] paramsSpec = new ParamSpec[]{
+				new ParamSpec("compartments", Map.class, geneCompartment, null),
+				new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
+				new ParamSpec("workspace", WorkspaceAIB.class, project, null)
+		};
+		for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
+			if (def.getID().equals("operations.ModelTransporterstoIntegration.ID")){
+
+				Workbench.getInstance().executeOperation(def, paramsSpec);
+			}
 		}
-	}
 
-	conn.closeConnection();	
-		
+		conn.closeConnection();	
+
 	}
 
 	//////////////////////////ValidateMethods/////////////////////////////
@@ -186,7 +186,7 @@ private void executeOperation() throws Exception {
 	public boolean submitFiles() throws Exception {
 
 		List<File> requiredFiles = creationOfRequiredFiles();
-		
+
 		if (requiredFiles == null) {
 			return false;
 		}
@@ -260,39 +260,39 @@ private void executeOperation() throws Exception {
 
 						//The following code will show different error and warning messages to merlin users depending on the error founded
 
-//						while (!stop && i<listOfFiles.length) {
-//							if (listOfFiles[i].getName().equals("1") ) {
-//								Workbench.getInstance().warn("Fail loading the model");
-//								stop = true;
-//								verify=false;
-//							}
-//							else if (listOfFiles[i].getName().equals("2") ){
-//								Workbench.getInstance().warn("CPLEX was not found");
-//								stop = true;
-//								verify=false;
-//							}
-//							else if (listOfFiles[i].getName().equals("3") ){
-//								Workbench.getInstance().warn("There is no Biomass reaction or its ID is incorrect");
-//								stop = true;
-//								verify=false;
-//							}
-//							else if (listOfFiles[i].getName().equals("4") ){
-//								Workbench.getInstance().warn("The protein name is incorrect");
-//								stop = true;
-//								verify=false;
-//							}
-//							else if (listOfFiles[i].getName().equals("5") ){
-//								Workbench.getInstance().warn("The output file name is incorrect");
-//								stop = true;
-//								verify=false;
-//							}
-//							else if (listOfFiles[i].getName().equals("6") ) {
-//								Workbench.getInstance().warn("One or more files are not correctly named");
-//								stop = true;
-//								verify=false;
-//							}
-//							i++;
-//						}
+						//						while (!stop && i<listOfFiles.length) {
+						//							if (listOfFiles[i].getName().equals("1") ) {
+						//								Workbench.getInstance().warn("Fail loading the model");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("2") ){
+						//								Workbench.getInstance().warn("CPLEX was not found");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("3") ){
+						//								Workbench.getInstance().warn("There is no Biomass reaction or its ID is incorrect");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("4") ){
+						//								Workbench.getInstance().warn("The protein name is incorrect");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("5") ){
+						//								Workbench.getInstance().warn("The output file name is incorrect");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							else if (listOfFiles[i].getName().equals("6") ) {
+						//								Workbench.getInstance().warn("One or more files are not correctly named");
+						//								stop = true;
+						//								verify=false;
+						//							}
+						//							i++;
+						//						}
 					}
 					else if (verify) {
 						verify=verifyKeys();
@@ -449,16 +449,16 @@ private void executeOperation() throws Exception {
 		String workspaceFolder = FileUtils.getWorkspaceTaxonomyFolderPath(this.project.getName(), this.project.getTaxonomyID());
 
 		File proteinFile2 = new File(workspaceFolder.concat("protein.faa"));
-		
+
 		File genomeFile = new File(this.transytDirectory.concat("genome.faa"));
-		
+
 		Files.copy(proteinFile2.toPath(), genomeFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-		
-//		org.apache.commons.io.FileUtils.copyDirectory(proteinFile2, genomeFile);
-		
-//		String proteinFileName = "genome.faa";
-//
-//		File proteinFile = new File(g);
+
+		//		org.apache.commons.io.FileUtils.copyDirectory(proteinFile2, genomeFile);
+
+		//		String proteinFileName = "genome.faa";
+		//
+		//		File proteinFile = new File(g);
 
 		requiredFiles.add(0,genomeFile);
 
@@ -475,7 +475,7 @@ private void executeOperation() throws Exception {
 		File metabolitesFile = new File(this.transytDirectory.concat("/metabolites.txt"));
 
 		List<String> metabolites = ModelMetabolitesServices.getAllCompoundsInModel(this.project.getName());
-		
+
 		if(metabolites == null || metabolites.isEmpty())
 			throw new Exception("no metabolites found present in the model!");
 
@@ -532,7 +532,7 @@ private void executeOperation() throws Exception {
 
 
 	}
-	
+
 	/**
 	 * @return the progress
 	 */
