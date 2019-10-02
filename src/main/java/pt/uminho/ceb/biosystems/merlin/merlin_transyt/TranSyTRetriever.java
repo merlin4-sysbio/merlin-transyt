@@ -14,7 +14,6 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -42,11 +41,10 @@ import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.annotation.AnnotationCo
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
 import pt.uminho.ceb.biosystems.merlin.compartments.datatype.AnnotationCompartmentsGenes;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
-import pt.uminho.ceb.biosystems.merlin.database.connector.datatypes.Connection;
+import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelMetabolitesServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelSequenceServices;
-import pt.uminho.ceb.biosystems.merlin.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
 
 
@@ -112,9 +110,6 @@ public class TranSyTRetriever implements Observer {
 
 	private void executeOperation() throws Exception {
 
-		Connection conn = new Connection(project.getDatabase().getDatabaseAccess());
-		Statement statement = conn.createStatement();
-
 		Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
 
 		AnnotationCompartmentsAIB c = null;
@@ -124,7 +119,7 @@ public class TranSyTRetriever implements Observer {
 				c=(AnnotationCompartmentsAIB) e;
 
 		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
-			geneCompartment = c.runCompartmentsInterface(c.getThreshold(), statement);
+			geneCompartment = c.runCompartmentsInterface(c.getThreshold());
 
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
@@ -137,9 +132,6 @@ public class TranSyTRetriever implements Observer {
 				Workbench.getInstance().executeOperation(def, paramsSpec);
 			}
 		}
-
-		conn.closeConnection();	
-
 	}
 
 	//////////////////////////ValidateMethods/////////////////////////////
