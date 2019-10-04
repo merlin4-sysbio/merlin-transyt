@@ -22,18 +22,21 @@ public class App
 
 	{
 
-		String transytDirectory = "/Users/davidelagoa/Desktop/transyt/";
+		//FILES MUST BE SUBMITTED IN THE FOLLOWING ORDER: 1.PROTEOME -> 2.MODEL or METABOLITES
+		
+		String transytDirectory = "C:\\\\Users\\\\BioSystems\\\\Desktop\\\\rosalind\\\\testFiles\\\\emanuel\\\\new3\\";
 		String transytResultsFile;
 
-		File textFile = new File("/Users/davidelagoa/Downloads/metabolites.txt");
-		File textFile2 = new File("/Users/davidelagoa/Downloads/genome.faa");
-		File textFile3 = new File("/Users/davidelagoa/Downloads/taxID.txt");
+		File textFile = new File("C:\\Users\\BioSystems\\Desktop\\rosalind\\testFiles\\emanuel\\metabolites.txt");
+		File textFile2 = new File("C:\\Users\\BioSystems\\Desktop\\rosalind\\testFiles\\emanuel\\genome.faa");
+//		File textFile3 = new File("/Users/davidelagoa/Downloads/taxID.txt");
 
 		List<File> requiredFiles = new ArrayList<>();
 
-		requiredFiles.add(textFile);
+		
 		requiredFiles.add(textFile2);
-		requiredFiles.add(textFile3);
+		requiredFiles.add(textFile);
+//		requiredFiles.add(textFile3);
 
 		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles);
 
@@ -81,7 +84,7 @@ public class App
 
 					System.out.println("downloading TranSyT results");
 
-					verify = post.downloadFile(submissionID, transytDirectory.concat("/results.zip"));
+//					verify = post.downloadFile(submissionID, transytDirectory.concat("/results.zip"));
 
 
 					System.out.println("verifying...");

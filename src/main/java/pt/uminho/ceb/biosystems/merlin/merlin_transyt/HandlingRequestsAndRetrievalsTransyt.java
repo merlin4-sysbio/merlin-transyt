@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 public class HandlingRequestsAndRetrievalsTransyt {
 
 //	private static final String URL = "http://transytmanager.rosalind.di.uminho.pt";
-	private static final String URL = "https://transyt.bio.di.uminho.pt";
+	private static final String URL = "http://palsson.di.uminho.pt:7475";
 
 	final static Logger logger = LoggerFactory.getLogger(HandlingRequestsAndRetrievalsTransyt.class);
 	
@@ -43,7 +43,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 */
 	public String postFiles() throws IOException, InterruptedException {
 
-		String uploadUrl = URL.concat("/submit");
+		String uploadUrl = URL.concat("/submitMerlinPlugin/1314884");
 
 
 		String charset = "UTF-8";
@@ -142,7 +142,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 
 		String uploadUrl = URL.concat("/status");
 
-		uploadUrl = uploadUrl.concat("/"+submissionID);
+		uploadUrl = uploadUrl.concat("/"+submissionID + "/True");
 
 		URL url = new URL(uploadUrl);
 
