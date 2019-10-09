@@ -243,12 +243,12 @@ public class TranSyTRetriever implements Observer {
 
 					if (!checksumFile.exists()) {
 
-						File folder = new File(transytResultsFile);
-						File[] listOfFiles = folder.listFiles();
-
-						boolean stop=false;
-
-						int i = 0;  //create errors dictionary!!!
+//						File folder = new File(transytResultsFile);
+//						File[] listOfFiles = folder.listFiles();
+//
+//						boolean stop=false;
+//
+//						int i = 0;  //create errors dictionary!!!
 
 						//The following code will show different error and warning messages to merlin users depending on the error founded
 
