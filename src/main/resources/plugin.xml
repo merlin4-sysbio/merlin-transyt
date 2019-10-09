@@ -11,7 +11,7 @@
         <extension uid="aibench.core" name="aibench.core.operation-definition"
             class="pt.uminho.ceb.biosystems.merlin.merlin_transyt.TranSyTRetriever">
             <operation-description name="transport reactions TranSyT"
-                path="30@model/30@find/" uid="operations.TranSyT.ID" />
+                path="30@model/30@create/" uid="operations.TranSyT.ID" />
         </extension>
 
        <extension uid="aibench.workbench" name="aibench.workbench.view">

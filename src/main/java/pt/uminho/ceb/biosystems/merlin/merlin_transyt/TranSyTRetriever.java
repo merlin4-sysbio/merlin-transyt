@@ -89,7 +89,7 @@ public class TranSyTRetriever implements Observer {
 
 				logger.info("The files for TranSyT were submitted successfully");
 
-				Workbench.getInstance().info("The files for TranSyT were submitted successfully");
+//				Workbench.getInstance().info("The files for TranSyT were submitted successfully");
 
 				executeOperation();
 			}
@@ -100,7 +100,9 @@ public class TranSyTRetriever implements Observer {
 				Workbench.getInstance().error("error while doing the operation! please try again");
 
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
+			logger.error(e.getMessage());
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
@@ -189,8 +191,6 @@ public class TranSyTRetriever implements Observer {
 
 		boolean verify = false;
 
-		try {
-
 			submissionID = post.postFiles();
 
 			if(submissionID!=null) {
@@ -207,20 +207,15 @@ public class TranSyTRetriever implements Observer {
 						responseCode = post.getStatus(submissionID);
 
 						if(responseCode == -1) {  
-							logger.error("Error!");
-							System.exit(1);
+							throw new Exception("error!");
 						}
 						else if (responseCode==503) {
-							Workbench.getInstance().warn("The server cannot handle the submission due to capacity overload. Please try again later!");
-							System.exit(1);
-						}
+							throw new Exception("The server cannot handle the submission due to capacity overload. Please try again later!");						}
 						else if (responseCode==500) {
-							Workbench.getInstance().warn("Something went wrong while processing the request, please try again");
-							System.exit(1);
+							throw new Exception("Something went wrong while processing the request, please try again");
 						}
 						else if (responseCode == 400) {
-							Workbench.getInstance().warn("The submitted files are fewer than expected");
-							System.exit(1);
+							throw new Exception("The submitted files are fewer than expected");
 						}
 
 						TimeUnit.SECONDS.sleep(3);
@@ -298,14 +293,10 @@ public class TranSyTRetriever implements Observer {
 				}
 
 			}
-			else
-				logger.error("No dockerID attributed!");
-		} 
-		catch (Exception e) {
-			e.printStackTrace();
-			logger.error("Error submitting files");
+			else {
+				throw new Exception("No dockerID attributed!");
+			}
 
-		}
 		return verify;
 	}
 
@@ -452,17 +443,17 @@ public class TranSyTRetriever implements Observer {
 		//
 		//		File proteinFile = new File(g);
 
-		requiredFiles.add(0,genomeFile);
+		requiredFiles.add(genomeFile);
 
-		File taxIDFile = new File(this.transytDirectory.concat("/taxID.txt"));
-
-		FileWriter writer = new FileWriter(taxIDFile);
-
-		writer.append(Long.toString(this.project.getTaxonomyID()));
-
-		writer.close();
-
-		requiredFiles.add(1,taxIDFile);
+//		File taxIDFile = new File(this.transytDirectory.concat("/taxID.txt"));
+//
+//		FileWriter writer = new FileWriter(taxIDFile);
+//
+//		writer.append(Long.toString(this.project.getTaxonomyID()));
+//
+//		writer.close();
+//
+//		requiredFiles.add(1,taxIDFile);
 
 		File metabolitesFile = new File(this.transytDirectory.concat("/metabolites.txt"));
 
@@ -473,7 +464,7 @@ public class TranSyTRetriever implements Observer {
 
 		saveWordsInFile(this.transytDirectory.concat("/metabolites.txt"),metabolites);
 
-		requiredFiles.add(2,metabolitesFile);
+		requiredFiles.add(metabolitesFile);
 
 		return requiredFiles;
 

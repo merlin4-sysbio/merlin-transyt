@@ -1,5 +1,6 @@
 package pt.uminho.ceb.biosystems.merlin.merlin_transyt;
 
+import java.io.IOException;
 import java.util.GregorianCalendar;
 import java.util.Observable;
 import java.util.Observer;
@@ -16,7 +17,10 @@ import es.uvigo.ei.aibench.core.operation.annotation.Port;
 import es.uvigo.ei.aibench.core.operation.annotation.Progress;
 import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
+import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.model.ModelReactionsAIB;
+import pt.uminho.ceb.biosystems.merlin.aibench.utilities.AIBenchUtils;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
+import pt.uminho.ceb.biosystems.merlin.aibench.views.model.ModelReactionsAIBView;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SourceType;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelReactionsServices;
@@ -43,10 +47,29 @@ public class RemoveTransporters implements Observer {
 
 
 	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject", order = 1)
-	public void setNewProject(WorkspaceAIB project) throws Exception {
+	public void setNewProject(WorkspaceAIB project) {
+		
+		this.startTime = GregorianCalendar.getInstance().getTimeInMillis();
+		
+		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 1, "removing transport reactions...");
 
-		ModelReactionsServices.removeReactionsBySource(this.project.getName(), SourceType.TRANSPORTERS);
-
+		try {
+			ModelReactionsServices.removeReactionsBySource(this.project.getName(), SourceType.TRANSPORTERS);
+			ModelReactionsServices.removeReactionsBySource(this.project.getName(), SourceType.TRANSYT);
+			
+			AIBenchUtils.updateView(this.project.getName(), ModelReactionsAIB.class);
+			
+			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 1, "");
+			
+			Workbench.getInstance().info("all transporters removed from the model");
+		} 
+		catch (Exception e) {
+			
+			AIBenchUtils.updateView(this.project.getName(), ModelReactionsAIB.class);
+			
+			Workbench.getInstance().error(e);
+			e.printStackTrace();
+		}
 	}
 
 	//////////////////////////ValidateMethods/////////////////////////////

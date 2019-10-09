@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 public class HandlingRequestsAndRetrievalsTransyt {
 
 //	private static final String URL = "http://transytmanager.rosalind.di.uminho.pt";
+//	private static final String URL = "https://transyt.bio.di.uminho.pt";
 	private static final String URL = "http://palsson.di.uminho.pt:7475";
 
 	final static Logger logger = LoggerFactory.getLogger(HandlingRequestsAndRetrievalsTransyt.class);
@@ -63,6 +64,9 @@ public class HandlingRequestsAndRetrievalsTransyt {
 				OutputStream output = connection.getOutputStream();
 				PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 				) {
+			
+			
+			
 			for (File file : this.requiredFiles){
 				logger.info("File path: " + file.getAbsolutePath());
 				// Send normal param.
