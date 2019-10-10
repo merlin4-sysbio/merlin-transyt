@@ -80,7 +80,9 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-			boolean submitted = submitFiles();
+//			boolean submitted = submitFiles();
+			
+			boolean submitted = true;
 
 			if (submitted && !this.cancel.get()) {
 
@@ -122,6 +124,9 @@ public class TranSyTRetriever implements Observer {
 
 		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 			geneCompartment = c.runCompartmentsInterface(c.getThreshold());
+		
+		transytResultsFile = "C:\\Users\\joses\\OneDrive\\Documentos\\merlin\\merlin-aibench\\ws\\workshoop\\83333\\transyt\\results\\";
+
 
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
