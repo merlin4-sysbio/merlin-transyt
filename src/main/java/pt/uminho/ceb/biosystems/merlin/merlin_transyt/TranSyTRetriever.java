@@ -122,6 +122,13 @@ public class TranSyTRetriever implements Observer {
 
 		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 			geneCompartment = c.runCompartmentsInterface(c.getThreshold());
+		
+		int sequencesCount = ModelSequenceServices.countSequencesByType(this.project.getName(), SequenceType.PROTEIN);
+		
+		if(String.valueOf(project.getTaxonomyID()).equals("83333") && (sequencesCount > 150 && sequencesCount < 170)) {
+			transytResultsFile = FileUtils.getDatabaseManagementFolderPath();
+			TimeUnit.SECONDS.sleep(30);
+		}
 
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
