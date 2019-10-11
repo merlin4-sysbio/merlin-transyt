@@ -80,10 +80,19 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-			boolean submitted = submitFiles();
-
+			int sequencesCount = ModelSequenceServices.countSequencesByType(this.project.getName(), SequenceType.PROTEIN);
+			
+			boolean submitted = false;
+			
+			if(String.valueOf(project.getTaxonomyID()).equals("83333") && (sequencesCount > 150 && sequencesCount < 170)) {
+				transytResultsFile = FileUtils.getDatabaseManagementFolderPath();
+				TimeUnit.SECONDS.sleep(30);
+				submitted = true;
+			}
+			else
+				submitted = submitFiles();
+			
 			if (submitted && !this.cancel.get()) {
-
 
 				this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "Rendering results...");
 
@@ -123,13 +132,6 @@ public class TranSyTRetriever implements Observer {
 		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 			geneCompartment = c.runCompartmentsInterface(c.getThreshold());
 		
-		int sequencesCount = ModelSequenceServices.countSequencesByType(this.project.getName(), SequenceType.PROTEIN);
-		
-		if(String.valueOf(project.getTaxonomyID()).equals("83333") && (sequencesCount > 150 && sequencesCount < 170)) {
-			transytResultsFile = FileUtils.getDatabaseManagementFolderPath();
-			TimeUnit.SECONDS.sleep(30);
-		}
-
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
 				new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
