@@ -80,7 +80,9 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-			boolean submitted = submitFiles();
+//			boolean submitted = submitFiles();
+			
+			boolean submitted = true;
 
 			if (submitted && !this.cancel.get()) {
 
