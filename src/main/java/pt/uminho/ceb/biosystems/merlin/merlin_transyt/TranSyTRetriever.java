@@ -44,6 +44,7 @@ import pt.uminho.ceb.biosystems.merlin.compartments.datatype.AnnotationCompartme
 import pt.uminho.ceb.biosystems.merlin.core.containers.model.CompartmentContainer;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
+import pt.uminho.ceb.biosystems.merlin.processes.WorkspaceProcesses;
 import pt.uminho.ceb.biosystems.merlin.processes.verifiers.CompartmentsVerifier;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelMetabolitesServices;
@@ -169,9 +170,6 @@ public class TranSyTRetriever implements Observer {
 			this.project = project;
 
 			try {
-				
-				File genomeFile = new File(FileUtils.getWorkspaceTaxonomyFolderPath(this.project.getName(), this.project.getTaxonomyID()).concat(FileExtensions.PROTEIN_FAA.toString()));
-				
 				if(!ModelSequenceServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
 					
 					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
@@ -180,9 +178,8 @@ public class TranSyTRetriever implements Observer {
 
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
-				if(!genomeFile.exists())
-					CreateGenomeFile.buildFastaFile(genomeFile.getAbsolutePath(), ModelSequenceServices.getGenomeFromDatabase(project.getName(), SequenceType.PROTEIN));
-
+				
+				WorkspaceProcesses.createFaaFile(this.project.getName(), this.project.getTaxonomyID()); // method creates ".faa" files only if they do not exist
 			} 
 			catch (Exception e) {
 				Workbench.getInstance().error(e);
