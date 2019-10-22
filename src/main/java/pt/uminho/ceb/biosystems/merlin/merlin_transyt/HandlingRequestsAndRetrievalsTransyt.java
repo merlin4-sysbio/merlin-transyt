@@ -21,18 +21,20 @@ import org.slf4j.LoggerFactory;
 public class HandlingRequestsAndRetrievalsTransyt {
 
 //	private static final String URL = "http://transytmanager.rosalind.di.uminho.pt";
-	private static final String URL = "https://transyt.bio.di.uminho.pt";
+//	private static final String URL = "https://transyt.bio.di.uminho.pt";
 //	private static final String URL = "http://palsson.di.uminho.pt:7475";
 
 	final static Logger logger = LoggerFactory.getLogger(HandlingRequestsAndRetrievalsTransyt.class);
 	
 	private List<File> requiredFiles;
 	private Long taxonomyId;
+	private String url;
 
-	public HandlingRequestsAndRetrievalsTransyt(List<File> requiredFiles, Long taxonomyId){
+	public HandlingRequestsAndRetrievalsTransyt(List<File> requiredFiles, Long taxonomyId, String url){
 
 		this.requiredFiles = requiredFiles;
 		this.taxonomyId = taxonomyId;
+		this.url = url;
 
 	}
 
@@ -45,7 +47,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 */
 	public String postFiles() throws IOException, InterruptedException {
 
-		String uploadUrl = URL.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString());
+		String uploadUrl = this.url.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString());
 
 		String charset = "UTF-8";
 		String param = "value";
@@ -138,7 +140,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 */
 	public int getStatus(String submissionID) throws IOException {
 
-		String uploadUrl = URL.concat("/status");
+		String uploadUrl = this.url.concat("/status");
 
 		uploadUrl = uploadUrl.concat("/"+submissionID + "/True");
 
@@ -170,7 +172,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	public boolean downloadFile(String submissionID, String path) throws IOException {
 
 		try {
-			String uploadUrl = URL.concat("/download");
+			String uploadUrl = this.url.concat("/download");
 
 			uploadUrl = uploadUrl.concat("/"+submissionID);
 
