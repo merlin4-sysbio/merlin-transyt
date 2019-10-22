@@ -39,9 +39,12 @@ import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.annotation.AnnotationCompartmentsAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
+import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.ncbi.CreateGenomeFile;
+import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.utilities.Enumerators.FileExtensions;
 import pt.uminho.ceb.biosystems.merlin.compartments.datatype.AnnotationCompartmentsGenes;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
+import pt.uminho.ceb.biosystems.merlin.processes.WorkspaceProcesses;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelMetabolitesServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelSequenceServices;
@@ -153,22 +156,23 @@ public class TranSyTRetriever implements Observer {
 
 		if(project == null) {
 
-			throw new IllegalArgumentException("no worksapce selected!");
+			throw new IllegalArgumentException("no workspace selected!");
 		}
 		else {
 
 			this.project = project;
 
 			try {
-
+				
 				if(!ModelSequenceServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
 					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
 				}
-				else if(this.project.getTaxonomyID()<0) {
+				if(this.project.getTaxonomyID()<0) {
 
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
-
+				
+				WorkspaceProcesses.createFaaFile(this.project.getName(), this.project.getTaxonomyID()); // method creates ".faa" files only if they do not exist
 			} 
 			catch (Exception e) {
 				Workbench.getInstance().error(e);
