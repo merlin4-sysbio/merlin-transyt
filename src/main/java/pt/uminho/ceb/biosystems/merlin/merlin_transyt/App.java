@@ -38,7 +38,7 @@ public class App
 		requiredFiles.add(textFile);
 //		requiredFiles.add(textFile3);
 
-		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles);
+		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles, null);
 
 		String submissionID = "";
 

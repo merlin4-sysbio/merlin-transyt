@@ -1,6 +1,5 @@
 package pt.uminho.ceb.biosystems.merlin.merlin_transyt;
 
-import java.io.IOException;
 import java.util.GregorianCalendar;
 import java.util.Observable;
 import java.util.Observer;
@@ -20,11 +19,8 @@ import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.model.ModelReactionsAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.AIBenchUtils;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
-import pt.uminho.ceb.biosystems.merlin.aibench.views.model.ModelReactionsAIBView;
-import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SourceType;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelReactionsServices;
-import pt.uminho.ceb.biosystems.merlin.services.model.ModelSequenceServices;
 
 
 /**
@@ -80,27 +76,11 @@ public class RemoveTransporters implements Observer {
 
 		if(project == null) {
 
-			throw new IllegalArgumentException("no worksapce selected!");
+			throw new IllegalArgumentException("no workspace selected!");
 		}
 		else {
 
 			this.project = project;
-
-			try {
-
-				if(!ModelSequenceServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
-					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
-				}
-				else if(this.project.getTaxonomyID()<0) {
-
-					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
-				}
-
-			} 
-			catch (Exception e) {
-				Workbench.getInstance().error(e);
-				e.printStackTrace();
-			}
 		}
 	}
 
@@ -131,11 +111,4 @@ public class RemoveTransporters implements Observer {
 		this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, this.counter.get(), this.querySize.get(), message);
 	}
 
-
-
-
-	//	public void propertyChange(PropertyChangeEvent evt) {
-	//		// TODO Auto-generated method stub
-	//		
-	//	}
 }

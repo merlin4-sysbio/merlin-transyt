@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -39,9 +38,13 @@ import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.annotation.AnnotationCompartmentsAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
+import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.ncbi.CreateGenomeFile;
+import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.utilities.Enumerators.FileExtensions;
 import pt.uminho.ceb.biosystems.merlin.compartments.datatype.AnnotationCompartmentsGenes;
+import pt.uminho.ceb.biosystems.merlin.core.containers.model.CompartmentContainer;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
 import pt.uminho.ceb.biosystems.merlin.core.utilities.Enumerators.SequenceType;
+import pt.uminho.ceb.biosystems.merlin.processes.verifiers.CompartmentsVerifier;
 import pt.uminho.ceb.biosystems.merlin.services.ProjectServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelMetabolitesServices;
 import pt.uminho.ceb.biosystems.merlin.services.model.ModelSequenceServices;
@@ -65,7 +68,8 @@ public class TranSyTRetriever implements Observer {
 	public static final String TRANSYT_FILE_NAME = "transyt";
 	private String transytResultsFile;
 	private String transytDirectory;
-
+	private CompartmentContainer outsideCompartment;
+	private CompartmentContainer insideCompartment;
 
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
 
@@ -117,7 +121,12 @@ public class TranSyTRetriever implements Observer {
 		}
 
 	}
-
+	
+	@Port(direction=Direction.INPUT, name="external compartment",description="default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 2)
+	public void setExternalCompartment(String compartment) throws Exception {}
+	
+	@Port(direction=Direction.INPUT, name="internal compartment",description="default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
+	public void setInternalCompartment(String compartment) throws Exception {}
 
 	private void executeOperation() throws Exception {
 
@@ -153,21 +162,26 @@ public class TranSyTRetriever implements Observer {
 
 		if(project == null) {
 
-			throw new IllegalArgumentException("no worksapce selected!");
+			throw new IllegalArgumentException("no workspace selected!");
 		}
 		else {
 
 			this.project = project;
 
 			try {
-
+				
+				File genomeFile = new File(FileUtils.getWorkspaceTaxonomyFolderPath(this.project.getName(), this.project.getTaxonomyID()).concat(FileExtensions.PROTEIN_FAA.toString()));
+				
 				if(!ModelSequenceServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
+					
 					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
 				}
-				else if(this.project.getTaxonomyID()<0) {
+				if(this.project.getTaxonomyID()<0) {
 
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
+				if(!genomeFile.exists())
+					CreateGenomeFile.buildFastaFile(genomeFile.getAbsolutePath(), ModelSequenceServices.getGenomeFromDatabase(project.getName(), SequenceType.PROTEIN));
 
 			} 
 			catch (Exception e) {
@@ -176,8 +190,34 @@ public class TranSyTRetriever implements Observer {
 			}
 		}
 	}
-
-
+	
+	/**
+	 * @param compartment
+	 * @throws Exception
+	 */
+	public void checkExternalCompartment(String compartment) throws Exception {
+		
+		this.outsideCompartment = CompartmentsVerifier.checkExternalCompartment(compartment, this.project.getName());
+		
+		if(this.outsideCompartment == null) {
+			Workbench.getInstance().warn("No external compartmentID defined!");
+		}
+		
+	}
+	
+	/**
+	 * @param compartment
+	 * @throws Exception
+	 */
+	public void checkInternalCompartment(String compartment) throws Exception {
+		
+		this.insideCompartment = CompartmentsVerifier.checkExternalCompartment(compartment, this.project.getName());
+		
+		if(this.insideCompartment == null) {
+			Workbench.getInstance().warn("No interior compartmentID defined!");
+		}
+		
+	}
 
 	/////////////////////////////////////////////////////
 
@@ -194,7 +234,7 @@ public class TranSyTRetriever implements Observer {
 			return false;
 		}
 
-		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles);
+		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles, this.project.getTaxonomyID());
 
 		String submissionID = "";
 

@@ -26,12 +26,13 @@ public class HandlingRequestsAndRetrievalsTransyt {
 
 	final static Logger logger = LoggerFactory.getLogger(HandlingRequestsAndRetrievalsTransyt.class);
 	
-	private final List<File> requiredFiles;
+	private List<File> requiredFiles;
+	private Long taxonomyId;
 
-	public HandlingRequestsAndRetrievalsTransyt(List<File> requiredFiles){
+	public HandlingRequestsAndRetrievalsTransyt(List<File> requiredFiles, Long taxonomyId){
 
 		this.requiredFiles = requiredFiles;
-		
+		this.taxonomyId = taxonomyId;
 
 	}
 
@@ -44,14 +45,11 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 */
 	public String postFiles() throws IOException, InterruptedException {
 
-		String uploadUrl = URL.concat("/submitMerlinPlugin/1314884");
-
+		String uploadUrl = URL.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString());
 
 		String charset = "UTF-8";
 		String param = "value";
 
-
-		//	File binaryFile = new File("C:\\Users\\Davide\\Desktop\\roff2018.pdf");
 		String boundary = Long.toHexString(System.currentTimeMillis()); // Just generate some unique random value.
 		String CRLF = "\r\n"; // Line separator required by multipart/form-data.
 
@@ -64,8 +62,6 @@ public class HandlingRequestsAndRetrievalsTransyt {
 				OutputStream output = connection.getOutputStream();
 				PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 				) {
-			
-			
 			
 			for (File file : this.requiredFiles){
 				logger.info("File path: " + file.getAbsolutePath());
@@ -92,10 +88,8 @@ public class HandlingRequestsAndRetrievalsTransyt {
 
 		}
 		
-
 		// Request is lazily fired whenever you need to obtain information about response.
 		int responseCode = ((HttpURLConnection) connection).getResponseCode();
-
 
 		//TimeUnit.SECONDS.sleep(5);
 
