@@ -70,6 +70,7 @@ public class TranSyTRetriever implements Observer {
 	private CompartmentContainer outsideCompartment;
 	private CompartmentContainer insideCompartment;
 	private CompartmentContainer membraneCompartment;
+	private String url;
 
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
 
@@ -117,9 +118,15 @@ public class TranSyTRetriever implements Observer {
 	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
 	public void setInternalCompartment(String compartment) throws Exception {}
 	
-	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 3)
+	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 4)
 	public void setMembraneCompartment(String compartment) throws Exception {}
-	
+
+	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 5)
+	public void setURL(String url) throws Exception {
+		this.url = url;
+		
+	}
+
 	private void executeOperation() throws Exception {
 
 		Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
@@ -238,7 +245,7 @@ public class TranSyTRetriever implements Observer {
 			return false;
 		}
 
-		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles, this.project.getTaxonomyID());
+		HandlingRequestsAndRetrievalsTransyt post = new HandlingRequestsAndRetrievalsTransyt(requiredFiles, this.project.getTaxonomyID(), this.url);
 
 		String submissionID = "";
 
