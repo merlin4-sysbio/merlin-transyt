@@ -38,8 +38,6 @@ import es.uvigo.ei.aibench.workbench.Workbench;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.annotation.AnnotationCompartmentsAIB;
 import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
-import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.ncbi.CreateGenomeFile;
-import pt.uminho.ceb.biosystems.merlin.bioapis.externalAPI.utilities.Enumerators.FileExtensions;
 import pt.uminho.ceb.biosystems.merlin.compartments.datatype.AnnotationCompartmentsGenes;
 import pt.uminho.ceb.biosystems.merlin.core.containers.model.CompartmentContainer;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
@@ -56,7 +54,7 @@ import pt.uminho.ceb.biosystems.merlin.utilities.io.FileUtils;
  * @author 
  *
  */
-@Operation(name="TranSyT",description="get transporter from TranSyT")
+@Operation(name="TranSyT",description="create transport reactions using TranSyT")
 public class TranSyTRetriever implements Observer {
 
 	private WorkspaceAIB project;
@@ -71,6 +69,7 @@ public class TranSyTRetriever implements Observer {
 	private String transytDirectory;
 	private CompartmentContainer outsideCompartment;
 	private CompartmentContainer insideCompartment;
+	private CompartmentContainer membraneCompartment;
 
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
 
@@ -85,17 +84,7 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-			int sequencesCount = ModelSequenceServices.countSequencesByType(this.project.getName(), SequenceType.PROTEIN);
-			
-			boolean submitted = false;
-			
-			if(String.valueOf(project.getTaxonomyID()).equals("83333") && (sequencesCount > 150 && sequencesCount < 170)) {
-				transytResultsFile = FileUtils.getDatabaseManagementFolderPath();
-				TimeUnit.SECONDS.sleep(30);
-				submitted = true;
-			}
-			else
-				submitted = submitFiles();
+			boolean submitted = submitFiles();
 			
 			if (submitted && !this.cancel.get()) {
 
@@ -120,15 +109,17 @@ public class TranSyTRetriever implements Observer {
 			Workbench.getInstance().error(e);
 			e.printStackTrace();
 		}
-
 	}
 	
-	@Port(direction=Direction.INPUT, name="external compartment",description="default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 2)
+	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 2)
 	public void setExternalCompartment(String compartment) throws Exception {}
 	
-	@Port(direction=Direction.INPUT, name="internal compartment",description="default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
+	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
 	public void setInternalCompartment(String compartment) throws Exception {}
-
+	
+	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 3)
+	public void setMembraneCompartment(String compartment) throws Exception {}
+	
 	private void executeOperation() throws Exception {
 
 		Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
@@ -145,6 +136,8 @@ public class TranSyTRetriever implements Observer {
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
 				new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
+				new ParamSpec("defaultInternalCompartment", CompartmentContainer.class, this.insideCompartment, null),
+				new ParamSpec("defaultExternalCompartment", CompartmentContainer.class, this.outsideCompartment, null),
 				new ParamSpec("workspace", WorkspaceAIB.class, project, null)
 		};
 		for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
@@ -208,9 +201,23 @@ public class TranSyTRetriever implements Observer {
 	 */
 	public void checkInternalCompartment(String compartment) throws Exception {
 		
-		this.insideCompartment = CompartmentsVerifier.checkExternalCompartment(compartment, this.project.getName());
+		this.insideCompartment = CompartmentsVerifier.checkInteriorCompartment(compartment, this.project.getName());
 		
 		if(this.insideCompartment == null) {
+			Workbench.getInstance().warn("No interior compartmentID defined!");
+		}
+		
+	}
+	
+	/**
+	 * @param compartment
+	 * @throws Exception
+	 */
+	public void checkMembraneCompartment(String compartment) throws Exception {
+		
+		this.membraneCompartment = CompartmentsVerifier.checkMembraneCompartment(compartment, this.project.getName());
+		
+		if(this.membraneCompartment == null) {
 			Workbench.getInstance().warn("No interior compartmentID defined!");
 		}
 		

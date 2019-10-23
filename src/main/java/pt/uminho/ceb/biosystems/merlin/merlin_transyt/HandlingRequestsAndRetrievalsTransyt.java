@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 public class HandlingRequestsAndRetrievalsTransyt {
 
-//	private static final String URL = "http://transytmanager.rosalind.di.uminho.pt";
 	private static final String URL = "https://transyt.bio.di.uminho.pt";
 //	private static final String URL = "http://palsson.di.uminho.pt:7475";
 
