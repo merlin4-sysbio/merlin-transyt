@@ -76,8 +76,21 @@ public class TranSyTRetriever implements Observer {
 
 
 	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject", order = 1)
-	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {
+	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {}
+	
+	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 2)
+	public void setExternalCompartment(String compartment) throws Exception {}
+	
+	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
+	public void setInternalCompartment(String compartment) throws Exception {}
+	
+	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 4)
+	public void setMembraneCompartment(String compartment) throws Exception {}
 
+	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 5)
+	public void setURL(String url) throws Exception {
+		this.url = url.replaceAll("/$", "");
+		
 		try {
 			transytDirectory = this.getTransytDirectory();
 
@@ -85,7 +98,9 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-			boolean submitted = submitFiles();
+//			boolean submitted = submitFiles();
+			boolean submitted = true;
+			transytResultsFile = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench\\ws\\hpluvialis_v4\\44745\\transyt\\results\\";
 			
 			if (submitted && !this.cancel.get()) {
 
@@ -111,23 +126,12 @@ public class TranSyTRetriever implements Observer {
 			e.printStackTrace();
 		}
 	}
-	
-	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 2)
-	public void setExternalCompartment(String compartment) throws Exception {}
-	
-	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
-	public void setInternalCompartment(String compartment) throws Exception {}
-	
-	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 4)
-	public void setMembraneCompartment(String compartment) throws Exception {}
-
-	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 5)
-	public void setURL(String url) throws Exception {
-		this.url = url;
-		
-	}
 
 	private void executeOperation() throws Exception {
+		
+		logger.info("Default interior compartment: " + this.insideCompartment);
+		logger.info("Default exterior compartment: " + this.outsideCompartment);
+		logger.info("Default membrane compartment: " + this.membraneCompartment);
 
 		Map<Integer, AnnotationCompartmentsGenes> geneCompartment = null;
 
@@ -145,6 +149,7 @@ public class TranSyTRetriever implements Observer {
 				new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
 				new ParamSpec("defaultInternalCompartment", CompartmentContainer.class, this.insideCompartment, null),
 				new ParamSpec("defaultExternalCompartment", CompartmentContainer.class, this.outsideCompartment, null),
+				new ParamSpec("defaultMembraneCompartment", CompartmentContainer.class, this.membraneCompartment, null),
 				new ParamSpec("workspace", WorkspaceAIB.class, project, null)
 		};
 		for (@SuppressWarnings("rawtypes") OperationDefinition def : Core.getInstance().getOperations()){
@@ -222,10 +227,10 @@ public class TranSyTRetriever implements Observer {
 	 */
 	public void checkMembraneCompartment(String compartment) throws Exception {
 		
-		this.membraneCompartment = CompartmentsVerifier.checkMembraneCompartment(compartment, this.project.getName());
+		this.membraneCompartment = CompartmentsVerifier.checkMembraneCompartment(compartment, this.project.getName(), this.project.isEukaryoticOrganism());
 		
 		if(this.membraneCompartment == null) {
-			Workbench.getInstance().warn("No interior compartmentID defined!");
+			Workbench.getInstance().warn("No membrane compartmentID defined!");
 		}
 		
 	}
@@ -297,49 +302,6 @@ public class TranSyTRetriever implements Observer {
 					File checksumFile = new File(transytResultsFile.concat("/checksum.md5"));
 
 					if (!checksumFile.exists()) {
-
-//						File folder = new File(transytResultsFile);
-//						File[] listOfFiles = folder.listFiles();
-//
-//						boolean stop=false;
-//
-//						int i = 0;  //create errors dictionary!!!
-
-						//The following code will show different error and warning messages to merlin users depending on the error founded
-
-						//						while (!stop && i<listOfFiles.length) {
-						//							if (listOfFiles[i].getName().equals("1") ) {
-						//								Workbench.getInstance().warn("Fail loading the model");
-						//								stop = true;
-						//								verify=false;
-						//							}
-						//							else if (listOfFiles[i].getName().equals("2") ){
-						//								Workbench.getInstance().warn("CPLEX was not found");
-						//								stop = true;
-						//								verify=false;
-						//							}
-						//							else if (listOfFiles[i].getName().equals("3") ){
-						//								Workbench.getInstance().warn("There is no Biomass reaction or its ID is incorrect");
-						//								stop = true;
-						//								verify=false;
-						//							}
-						//							else if (listOfFiles[i].getName().equals("4") ){
-						//								Workbench.getInstance().warn("The protein name is incorrect");
-						//								stop = true;
-						//								verify=false;
-						//							}
-						//							else if (listOfFiles[i].getName().equals("5") ){
-						//								Workbench.getInstance().warn("The output file name is incorrect");
-						//								stop = true;
-						//								verify=false;
-						//							}
-						//							else if (listOfFiles[i].getName().equals("6") ) {
-						//								Workbench.getInstance().warn("One or more files are not correctly named");
-						//								stop = true;
-						//								verify=false;
-						//							}
-						//							i++;
-						//						}
 					}
 					else if (verify) {
 						verify=verifyKeys();
