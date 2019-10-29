@@ -98,9 +98,9 @@ public class TranSyTRetriever implements Observer {
 
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
-//			boolean submitted = submitFiles();
-			boolean submitted = true;
-			transytResultsFile = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench\\ws\\hpluvialis_v4\\44745\\transyt\\results\\";
+			boolean submitted = submitFiles();
+//			boolean submitted = true;
+//			transytResultsFile = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench\\ws\\hpluvialis_v4\\44745\\transyt\\results\\";
 			
 			if (submitted && !this.cancel.get()) {
 
