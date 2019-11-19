@@ -98,7 +98,7 @@
 		<dependency>
 			<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
 			<artifactId>merlin-aibench</artifactId>
-			<version>4.0.2-SNAPSHOT</version>
+			<version>${pt.uminho.ceb.biosystems.merlin.version}</version>
 		</dependency>
 	</dependencies>
 	
