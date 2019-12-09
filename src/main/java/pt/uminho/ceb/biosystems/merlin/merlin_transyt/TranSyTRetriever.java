@@ -35,9 +35,9 @@ import es.uvigo.ei.aibench.core.operation.annotation.Operation;
 import es.uvigo.ei.aibench.core.operation.annotation.Port;
 import es.uvigo.ei.aibench.core.operation.annotation.Progress;
 import es.uvigo.ei.aibench.workbench.Workbench;
-import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.WorkspaceAIB;
-import pt.uminho.ceb.biosystems.merlin.aibench.datatypes.annotation.AnnotationCompartmentsAIB;
-import pt.uminho.ceb.biosystems.merlin.aibench.utilities.TimeLeftProgress;
+import pt.uminho.ceb.biosystems.merlin.gui.datatypes.WorkspaceAIB;
+import pt.uminho.ceb.biosystems.merlin.gui.datatypes.annotation.AnnotationCompartmentsAIB;
+import pt.uminho.ceb.biosystems.merlin.gui.utilities.TimeLeftProgress;
 import pt.uminho.ceb.biosystems.merlin.core.containers.model.CompartmentContainer;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.WorkspaceEntity;
 import pt.uminho.ceb.biosystems.merlin.core.datatypes.model.compartments.AnnotationCompartmentsGenes;
@@ -202,7 +202,8 @@ public class TranSyTRetriever implements Observer {
 		this.outsideCompartment = CompartmentsVerifier.checkExternalCompartment(compartment, this.project.getName());
 		
 		if(this.outsideCompartment == null) {
-			Workbench.getInstance().warn("No external compartmentID defined!");
+			logger.warn("No external compartmentID defined!");
+//			Workbench.getInstance().warn("No external compartmentID defined!");
 		}
 		
 	}
@@ -216,7 +217,8 @@ public class TranSyTRetriever implements Observer {
 		this.insideCompartment = CompartmentsVerifier.checkInteriorCompartment(compartment, this.project.getName());
 		
 		if(this.insideCompartment == null) {
-			Workbench.getInstance().warn("No interior compartmentID defined!");
+			logger.warn("No interior compartmentID defined!");
+//			Workbench.getInstance().warn("No interior compartmentID defined!");
 		}
 		
 	}
@@ -230,7 +232,8 @@ public class TranSyTRetriever implements Observer {
 		this.membraneCompartment = CompartmentsVerifier.checkMembraneCompartment(compartment, this.project.getName(), this.project.isEukaryoticOrganism());
 		
 		if(this.membraneCompartment == null) {
-			Workbench.getInstance().warn("No membrane compartmentID defined!");
+			logger.warn("No membrane compartmentID defined!");
+//			Workbench.getInstance().warn("No membrane compartmentID defined!");
 		}
 		
 	}
