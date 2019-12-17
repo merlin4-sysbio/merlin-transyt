@@ -1,7 +1,7 @@
 <plugin start="true">
     <uid>pt.uminho.ceb.biosystems.merlin.transyt</uid>
     <name>merlin-transyt</name>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
     
     <dependencies>
         <dependency uid="merlin"/>
