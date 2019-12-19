@@ -1,9 +1,9 @@
 package pt.uminho.ceb.biosystems.merlin.merlin_transyt;
 
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -15,6 +15,9 @@ import java.nio.file.Files;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +43,9 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 * @return docker is a {@code String} which represents the ID of the docker used
 	 * @throws IOException
 	 * @throws InterruptedException
+	 * @throws ParseException 
 	 */
-	public String postFiles() throws IOException, InterruptedException {
+	public String postFiles() throws IOException, InterruptedException, ParseException {
 
 		String uploadUrl = this.url.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString());
 
@@ -91,19 +95,23 @@ public class HandlingRequestsAndRetrievalsTransyt {
 
 		//TimeUnit.SECONDS.sleep(5);
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(((HttpURLConnection) connection).getInputStream()));
-		String html = "";
+//		String html = "";
 		String docker = null;
 		
 		logger.info(uploadUrl);
-		if (responseCode==202 || responseCode==201)
-		{
-			while ((html = in.readLine()) != null){
-				if (html.contains("submissionID")) {
-					String[] parts = html.split(":");
-					docker = parts[1].replace("\"", "").trim();
+		if (responseCode==202 || responseCode==201){
+			InputStream inputStream = ((HttpURLConnection) connection).getInputStream();
+					JSONParser jsonParser = new JSONParser();
+					JSONObject jsonObject = (JSONObject)jsonParser.parse(
+					      new InputStreamReader(inputStream, "UTF-8"));
+			
+//			while ((html = in.readLine()) != null){
+				if (jsonObject.containsKey("submissionID")) {
+//						String[] parts = html.split(":");
+//						System.out.println(jsonObject.get("submissionID"));
+						docker = jsonObject.get("submissionID").toString();
 				}
-			}
+//			}
 		}
 
 		else if (responseCode==503) {
