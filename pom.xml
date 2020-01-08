@@ -5,7 +5,7 @@
 
 	<groupId>pt.uminho.ceb.biosystems.merlin</groupId>
 	<artifactId>merlin-transyt</artifactId>
-	<version>4.0.2-RELEASE</version>
+	<version>4.0.2.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>merlin-transyt</name>
@@ -27,7 +27,7 @@
 		<pt.uminho.ceb.biosystems.merlin.version>4.0.2.1-SNAPSHOT</pt.uminho.ceb.biosystems.merlin.version>
 		<pt.uminho.ceb.biosystems.merlin.groupId>pt.uminho.ceb.biosystems.merlin</pt.uminho.ceb.biosystems.merlin.groupId>
 		<merlin.plugins.directory>${project.basedir}/../merlin-project/merlin-gui/plugins</merlin.plugins.directory>
-		<merlin.plugins_bin.directory>${project.basedir}/../merlin-project/merlin-gui/plugins_bin/merlin-trasyt</merlin.plugins_bin.directory>
+		<merlin.plugins_bin.directory>${project.basedir}/../merlin-project/merlin-gui/plugins_bin/merlin-transyt</merlin.plugins_bin.directory>
 		<build.name>beta</build.name>
 	</properties>
 
