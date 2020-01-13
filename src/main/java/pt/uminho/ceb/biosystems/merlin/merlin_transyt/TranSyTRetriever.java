@@ -71,23 +71,35 @@ public class TranSyTRetriever implements Observer {
 	private CompartmentContainer insideCompartment;
 	private CompartmentContainer membraneCompartment;
 	private String url;
+	private Boolean overrideOntologiesFilter;
+	private TranSyTSupportedDatabases identifiersDatabase;
 
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
 
 
-	@Port(direction=Direction.INPUT, name="new model",description="select the new model workspace",validateMethod="checkNewProject", order = 1)
+	@Port(direction=Direction.INPUT, name="workspace",description="select workspace",validateMethod="checkNewProject", order = 1)
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {}
 	
-	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 2)
+	@Port(direction=Direction.INPUT, name="compounds' identifiers",description="please select the reference database of the compounds used in the model", order = 3)
+	public void setNewProject(TranSyTSupportedDatabases identifiersDatabase) {
+		this.identifiersDatabase = identifiersDatabase;
+	}
+	
+	@Port(direction=Direction.INPUT, name="override ontologies filter",description="select true to override TranSyT's ontologies filter", advanced = true, order = 3)
+	public void setNewProject(boolean overrideOntologiesFilter) {
+		this.overrideOntologiesFilter = overrideOntologiesFilter;
+	}
+	
+	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 4)
 	public void setExternalCompartment(String compartment) throws Exception {}
 	
-	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 3)
+	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 5)
 	public void setInternalCompartment(String compartment) throws Exception {}
 	
-	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 4)
+	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 6)
 	public void setMembraneCompartment(String compartment) throws Exception {}
 
-	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 5)
+	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 7)
 	public void setURL(String url) throws Exception {
 		this.url = url.replaceAll("/$", "");
 		
@@ -259,7 +271,7 @@ public class TranSyTRetriever implements Observer {
 
 		boolean verify = false;
 
-			submissionID = post.postFiles();
+			submissionID = post.postFiles(this.identifiersDatabase, this.overrideOntologiesFilter);
 
 			if(submissionID!=null) {
 

@@ -45,9 +45,10 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 * @throws InterruptedException
 	 * @throws ParseException 
 	 */
-	public String postFiles() throws IOException, InterruptedException, ParseException {
+	public String postFiles(TranSyTSupportedDatabases database, Boolean overrideOntologies) throws IOException, InterruptedException, ParseException {
 
-		String uploadUrl = this.url.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString());
+		String uploadUrl = this.url.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString()).concat("/")
+				.concat(database.toString()).concat("/").concat(overrideOntologies.toString());
 
 		String charset = "UTF-8";
 		String param = "value";
