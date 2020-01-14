@@ -97,11 +97,15 @@ public class TranSyTRetriever implements Observer {
 	public void setInternalCompartment(String compartment) throws Exception {}
 	
 	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 6)
-	public void setMembraneCompartment(String compartment) throws Exception {}
+	public void setMembraneCompartment(String compartment) throws Exception {
+		
+//	}
 
-	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 7)
-	public void setURL(String url) throws Exception {
-		this.url = url.replaceAll("/$", "");
+//	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 7)
+//	public void setURL(String url) throws Exception {
+//		this.url = url.replaceAll("/$", "");
+		
+		this.url = FileUtils.readTransytConfFile().get("host");
 		
 		try {
 			transytDirectory = this.getTransytDirectory();
