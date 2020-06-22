@@ -19,6 +19,7 @@
                icon="icons/Lifecycle/remote.png" />
         </extension>
         
+        
         <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
         
         <extension uid="aibench.core" name="aibench.core.operation-definition"

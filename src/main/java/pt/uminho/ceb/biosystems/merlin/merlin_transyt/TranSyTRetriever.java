@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -71,42 +72,126 @@ public class TranSyTRetriever implements Observer {
 	private CompartmentContainer insideCompartment;
 	private CompartmentContainer membraneCompartment;
 	private String url;
-	private Boolean overrideOntologiesFilter;
-	private TranSyTSupportedDatabases identifiersDatabase;
+	//	private Boolean overrideOntologiesFilter;
+	//	private TranSyTSupportedDatabases identifiersDatabase;
+	private Map<String, String> inputs = new HashMap<>();
 
 	final static Logger logger = LoggerFactory.getLogger(TranSyTRetriever.class);
 
-
 	@Port(direction=Direction.INPUT, name="workspace",description="select workspace",validateMethod="checkNewProject", order = 1)
 	public void setNewProject(WorkspaceAIB project) throws IOException, SQLException {}
-	
-	@Port(direction=Direction.INPUT, name="compounds' identifiers",description="please select the reference database of the compounds used in the model", order = 3)
-	public void setNewProject(TranSyTSupportedDatabases identifiersDatabase) {
-		this.identifiersDatabase = identifiersDatabase;
-	}
-	
-	@Port(direction=Direction.INPUT, name="override ontologies filter",description="select true to override TranSyT's ontologies filter", advanced = true, order = 3)
-	public void setNewProject(boolean overrideOntologiesFilter) {
-		this.overrideOntologiesFilter = overrideOntologiesFilter;
-	}
-	
-	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 4)
-	public void setExternalCompartment(String compartment) throws Exception {}
-	
-	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 5)
-	public void setInternalCompartment(String compartment) throws Exception {}
-	
-	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 6)
-	public void setMembraneCompartment(String compartment) throws Exception {
-		
-//	}
 
-//	@Port(direction=Direction.INPUT, name="url",description="default TranSyT url", advanced=true, defaultValue = "https://transyt.bio.di.uminho.pt", order = 7)
-//	public void setURL(String url) throws Exception {
-//		this.url = url.replaceAll("/$", "");
-		
+	@Port(direction=Direction.INPUT, name="compounds' identifiers",description="please select the reference database of the compounds used in the model",
+			order = 3)
+	public void setIdentifiersDatabase(TranSyTSupportedDatabases identifiersDatabase) {
+		this.inputs.put("reference_database", identifiersDatabase.toString());
+	}
+
+	@Port(direction=Direction.INPUT, name="override ontologies filter",description="select true to override TranSyT's ontologies filter", 
+			advanced = true, order = 3)
+	public void setOverrideFilter(boolean overrideOntologiesFilter) {
+		this.inputs.put("override_ontologies_filter", overrideOntologiesFilter+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Reactions annotation alpha value",description="insert a number between 0 and 1", 
+			advanced = true, defaultValue = "0.75", validateMethod="checkDecimalAbove0Below1", order = 4)
+	public void setAlphaValue(double alpha) throws Exception{
+		this.inputs.put("alpha", alpha+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Reactions annotation beta value",description="insert a number between 0 and 1", 
+			advanced = true, defaultValue = "0.3", validateMethod="checkDecimalAbove0Below1", order = 5)
+	public void setBetaValue(double beta) throws Exception{
+		this.inputs.put("beta", beta+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Reactions annotation minimum hits penalty",
+			description="Minimum hits to avoid penalty in taxonomy score calculations.", 
+			advanced = true, defaultValue = "2", validateMethod="checkIntAbove0", order = 6)
+	public void setMinHitsValue(int minHits) throws Exception{
+		this.inputs.put("minimum_hits_penalty", minHits+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="BLAST bit score threshold",
+			description="Parameter used to filter the results of the NCBI Blast+ software.", 
+			advanced = true, defaultValue = "50", validateMethod="checkIntAbove0", order = 7)
+	public void setBitScoreValue(int bitScore) throws Exception{
+		this.inputs.put("bitscore_threshold", bitScore+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Minimum query coverage threshold (%)",
+			description="Parameter used to filter the results of the NCBI Blast+ software.", 
+			advanced = true, defaultValue = "80", validateMethod="checkPercentage", order = 8)
+	public void setQueryCovValue(double queryCov) throws Exception{
+		this.inputs.put("query_coverage_threshold", queryCov+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="BLAST e-value threshold (1e-x)",
+			description="Parameter '-evalue' of the NCBI Blast+ software.", 
+			advanced = true, defaultValue = "20", validateMethod="checkIntAbove0", order = 9)
+	public void setEvalueThreshold(int evalueThreshold) throws Exception{
+		this.inputs.put("blast_evalue_threshold", evalueThreshold+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Reactions annotation score threshold",
+			description="Score above which a reaction is accepted.", 
+			advanced = true, defaultValue = "0.75", validateMethod="checkDecimalAbove0Below1", order = 10)
+	public void setScoreThreshold(double scoreThreshold) throws Exception{
+		this.inputs.put("score_threshold", scoreThreshold+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Similarity score (%)",
+			description="Parameter used to filter the results of the NCBI Blast+ software.", 
+			advanced = true, defaultValue = "30", validateMethod="checkPercentage", order = 11)
+	public void setSimScore(double simScore) throws Exception{
+		this.inputs.put("similarity_score", simScore+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="TC families annotation alpha value",description="insert a number between 0 and 1", 
+			advanced = true, defaultValue = "0.4", validateMethod="checkDecimalAbove0Below1", order = 12)
+	public void setFamiliesAlphaValue(double alphaFamily) throws Exception{
+		this.inputs.put("alpha_families", alphaFamily+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="E-value auto-accept threshold (1e-x)",
+			description="The value below which all hits are accepted as possible transporters.", 
+			advanced = true, defaultValue = "0", validateMethod="checkIntAbove0", order = 13)
+	public void setAutoAccept(int autoAccept) throws Exception{
+		this.inputs.put("auto_accept_evalue", autoAccept+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Accept top results (%)",
+			description="Percentage of top blast results that should be accepted for each entry.", 
+			advanced = true, defaultValue = "10", validateMethod="checkPercentage", order = 14)
+	public void setTopPercent(double percentage) throws Exception{
+		this.inputs.put("percent_accept", percentage+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="E-value threshold method-1 (1e-x)",
+			description="E-value above which all results should be disregarded by method-1.", 
+			advanced = true, defaultValue = "50", validateMethod="checkIntAbove0", order = 15)
+	public void setEvalThresh(int eval) throws Exception{
+		this.inputs.put("limit_evalue_accept", eval+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="Ignore method-2",
+			description="select true to ignore method-2 of reactions annotation", 
+			advanced = true, order = 16)
+	public void setIgnoreMethod2(boolean ignoreMethod2) {
+		this.inputs.put("ignore_method2", ignoreMethod2+"");
+	}
+
+	@Port(direction=Direction.INPUT, name="external compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkExternalCompartment", order = 44)
+	public void setExternalCompartment(String compartment) throws Exception {}
+
+	@Port(direction=Direction.INPUT, name="internal compartment",description="name of the default external compartment", advanced=true, defaultValue = "auto", validateMethod="checkInternalCompartment", order = 45)
+	public void setInternalCompartment(String compartment) throws Exception {}
+
+	@Port(direction=Direction.INPUT, name="membrane compartment",description="name of the default membrane compartment", advanced=true, defaultValue = "auto", validateMethod="checkMembraneCompartment", order = 46)
+	public void setMembraneCompartment(String compartment) throws Exception {
+
 		this.url = FileUtils.readTransytConfFile().get("host");
-		
+
 		try {
 			transytDirectory = this.getTransytDirectory();
 
@@ -115,16 +200,12 @@ public class TranSyTRetriever implements Observer {
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
 			boolean submitted = submitFiles();
-//			boolean submitted = true;
-//			transytResultsFile = "C:\\Users\\BioSystems\\merlin4\\merlin-aibench\\ws\\hpluvialis_v4\\44745\\transyt\\results\\";
-			
+
 			if (submitted && !this.cancel.get()) {
 
 				this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 4, 4, "Rendering results...");
 
 				logger.info("The files for TranSyT were submitted successfully");
-
-//				Workbench.getInstance().info("The files for TranSyT were submitted successfully");
 
 				executeOperation();
 			}
@@ -144,7 +225,7 @@ public class TranSyTRetriever implements Observer {
 	}
 
 	private void executeOperation() throws Exception {
-		
+
 		logger.info("Default interior compartment: " + this.insideCompartment);
 		logger.info("Default exterior compartment: " + this.outsideCompartment);
 		logger.info("Default membrane compartment: " + this.membraneCompartment);
@@ -159,7 +240,7 @@ public class TranSyTRetriever implements Observer {
 
 		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 			geneCompartment = c.runCompartmentsInterface(c.getThreshold());
-		
+
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
 				new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
@@ -192,14 +273,14 @@ public class TranSyTRetriever implements Observer {
 
 			try {
 				if(!ModelSequenceServices.checkGenomeSequences(project.getName(), SequenceType.PROTEIN)) {
-					
+
 					throw new IllegalArgumentException("please set the project fasta ('.faa' or '.fna') files");
 				}
 				if(this.project.getTaxonomyID()<0) {
 
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
-				
+
 				WorkspaceProcesses.createFaaFile(this.project.getName(), this.project.getTaxonomyID()); // method creates ".faa" files only if they do not exist
 			} 
 			catch (Exception e) {
@@ -208,50 +289,81 @@ public class TranSyTRetriever implements Observer {
 			}
 		}
 	}
-	
+
+	/**
+	 * @param value
+	 */
+	public void checkDecimalAbove0Below1(double value) {
+
+		if(value < 0)
+			throw new IllegalArgumentException("Value should be above 0. Inserted: " + value);
+		else if(value > 1)
+			throw new IllegalArgumentException("Value should be below 1. Inserted: " + value);
+	}
+
+	/**
+	 * @param value
+	 */
+	public void checkIntAbove0(int value) {
+
+		if(value < 0)
+			throw new IllegalArgumentException("Value should be above 0. Inserted: " + value);
+	}
+
+	/**
+	 * @param value
+	 */
+	public void checkPercentage(double value) {
+
+		if(value < 0)
+			throw new IllegalArgumentException("Value should be above 0. Inserted: " + value);
+		else if(value > 100)
+			throw new IllegalArgumentException("Value should be below 100. Inserted: " + value);
+	}
+
 	/**
 	 * @param compartment
 	 * @throws Exception
 	 */
 	public void checkExternalCompartment(String compartment) throws Exception {
-		
+
 		this.outsideCompartment = CompartmentsVerifier.checkExternalCompartment(compartment, this.project.getName());
-		
+
 		if(this.outsideCompartment == null) {
 			logger.warn("No external compartmentID defined!");
-//			Workbench.getInstance().warn("No external compartmentID defined!");
+			//			Workbench.getInstance().warn("No external compartmentID defined!");
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param compartment
 	 * @throws Exception
 	 */
 	public void checkInternalCompartment(String compartment) throws Exception {
-		
+
 		this.insideCompartment = CompartmentsVerifier.checkInteriorCompartment(compartment, this.project.getName());
-		
+
 		if(this.insideCompartment == null) {
 			logger.warn("No interior compartmentID defined!");
-//			Workbench.getInstance().warn("No interior compartmentID defined!");
+			//			Workbench.getInstance().warn("No interior compartmentID defined!");
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param compartment
 	 * @throws Exception
 	 */
 	public void checkMembraneCompartment(String compartment) throws Exception {
-		
+
 		this.membraneCompartment = CompartmentsVerifier.checkMembraneCompartment(compartment, this.project.getName(), this.project.isEukaryoticOrganism());
-		
+
 		if(this.membraneCompartment == null) {
 			logger.warn("No membrane compartmentID defined!");
-//			Workbench.getInstance().warn("No membrane compartmentID defined!");
+			//			Workbench.getInstance().warn("No membrane compartmentID defined!");
 		}
-		
+
 	}
 
 	/////////////////////////////////////////////////////
@@ -275,68 +387,68 @@ public class TranSyTRetriever implements Observer {
 
 		boolean verify = false;
 
-			submissionID = post.postFiles(this.identifiersDatabase, this.overrideOntologiesFilter);
+		submissionID = post.postFiles(this.inputs);
 
-			if(submissionID!=null) {
+		if(submissionID!=null) {
 
-				try {
-					logger.info("SubmissionID attributed: {}", submissionID);
-					int responseCode = -1;
+			try {
+				logger.info("SubmissionID attributed: {}", submissionID);
+				int responseCode = -1;
 
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, 
-							"files submitted, waiting for results...");
+				this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 1, 4, 
+						"files submitted, waiting for results...");
 
-					while (responseCode!=200 &&  !this.cancel.get()) {
+				while (responseCode!=200 &&  !this.cancel.get()) {
 
-						responseCode = post.getStatus(submissionID);
+					responseCode = post.getStatus(submissionID);
 
-						if(responseCode == -1) {  
-							throw new Exception("error!");
-						}
-						else if (responseCode==503) {
-							throw new Exception("The server cannot handle the submission due to capacity overload. Please try again later!");						}
-						else if (responseCode==500) {
-							throw new Exception("Something went wrong while processing the request, please try again");
-						}
-						else if (responseCode == 400) {
-							throw new Exception("The submitted files are fewer than expected");
-						}
-
-						TimeUnit.SECONDS.sleep(3);
+					if(responseCode == -1) {  
+						throw new Exception("error!");
+					}
+					else if (responseCode==503) {
+						throw new Exception("The server cannot handle the submission due to capacity overload. Please try again later!");						}
+					else if (responseCode==500) {
+						throw new Exception("Something went wrong while processing the request, please try again");
+					}
+					else if (responseCode == 400) {
+						throw new Exception("The submitted files are fewer than expected");
 					}
 
-
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "downloading TranSyT results");
-
-					if(!this.cancel.get())
-						verify = post.downloadFile(submissionID, this.transytDirectory.concat("/results.zip"));
-
-
-					this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "verifying...");
-
-					transytResultsFile = this.transytDirectory.concat("results/");
-
-					FileUtils.extractZipFile(this.transytDirectory.concat("/results.zip"), transytResultsFile);
-
-					File checksumFile = new File(transytResultsFile.concat("/checksum.md5"));
-
-					if (!checksumFile.exists()) {
-					}
-					else if (verify) {
-						verify=verifyKeys();
-						logger.info("The result of the verification of md5 file was {}", Boolean.toString(verify));
-					}
-
-					return verify;
-				}
-				catch (Exception e) {
-					e.printStackTrace();
+					TimeUnit.SECONDS.sleep(3);
 				}
 
+
+				this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 2, 4, "downloading TranSyT results");
+
+				if(!this.cancel.get())
+					verify = post.downloadFile(submissionID, this.transytDirectory.concat("/results.zip"));
+
+
+				this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 3, 4, "verifying...");
+
+				transytResultsFile = this.transytDirectory.concat("results/");
+
+				FileUtils.extractZipFile(this.transytDirectory.concat("/results.zip"), transytResultsFile);
+
+				File checksumFile = new File(transytResultsFile.concat("/checksum.md5"));
+
+				if (!checksumFile.exists()) {
+				}
+				else if (verify) {
+					verify=verifyKeys();
+					logger.info("The result of the verification of md5 file was {}", Boolean.toString(verify));
+				}
+
+				return verify;
 			}
-			else {
-				throw new Exception("No dockerID attributed!");
+			catch (Exception e) {
+				e.printStackTrace();
 			}
+
+		}
+		else {
+			throw new Exception("No dockerID attributed!");
+		}
 
 		return verify;
 	}
@@ -486,15 +598,15 @@ public class TranSyTRetriever implements Observer {
 
 		requiredFiles.add(genomeFile);
 
-//		File taxIDFile = new File(this.transytDirectory.concat("/taxID.txt"));
-//
-//		FileWriter writer = new FileWriter(taxIDFile);
-//
-//		writer.append(Long.toString(this.project.getTaxonomyID()));
-//
-//		writer.close();
-//
-//		requiredFiles.add(1,taxIDFile);
+		//		File taxIDFile = new File(this.transytDirectory.concat("/taxID.txt"));
+		//
+		//		FileWriter writer = new FileWriter(taxIDFile);
+		//
+		//		writer.append(Long.toString(this.project.getTaxonomyID()));
+		//
+		//		writer.close();
+		//
+		//		requiredFiles.add(1,taxIDFile);
 
 		File metabolitesFile = new File(this.transytDirectory.concat("/metabolites.txt"));
 
