@@ -13,6 +13,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -45,10 +46,24 @@ public class HandlingRequestsAndRetrievalsTransyt {
 	 * @throws InterruptedException
 	 * @throws ParseException 
 	 */
-	public String postFiles(TranSyTSupportedDatabases database, Boolean overrideOntologies) throws IOException, InterruptedException, ParseException {
+	public String postFiles(Map<String, String> userInputs) throws IOException, InterruptedException, ParseException {
 
 		String uploadUrl = this.url.concat("/submitMerlinPlugin/").concat(this.taxonomyId.toString()).concat("/")
-				.concat(database.toString()).concat("/").concat(overrideOntologies.toString());
+				.concat(userInputs.get("reference_database").toString()).concat("/")
+				.concat(userInputs.get("override_ontologies_filter").toString()).concat("/")
+				.concat(userInputs.get("alpha").toString()).concat("/")
+				.concat(userInputs.get("beta").toString()).concat("/")
+				.concat(userInputs.get("minimum_hits_penalty").toString()).concat("/")
+				.concat(userInputs.get("bitscore_threshold").toString()).concat("/")
+				.concat(userInputs.get("query_coverage_threshold").toString()).concat("/")
+				.concat(userInputs.get("blast_evalue_threshold").toString()).concat("/")
+				.concat(userInputs.get("score_threshold").toString()).concat("/")
+				.concat(userInputs.get("similarity_score").toString()).concat("/")
+				.concat(userInputs.get("alpha_families").toString()).concat("/")
+				.concat(userInputs.get("auto_accept_evalue").toString()).concat("/")
+				.concat(userInputs.get("percent_accept").toString()).concat("/")
+				.concat(userInputs.get("limit_evalue_accept").toString()).concat("/")
+				.concat(userInputs.get("ignore_m2").toString());
 
 		String charset = "UTF-8";
 		String param = "value";

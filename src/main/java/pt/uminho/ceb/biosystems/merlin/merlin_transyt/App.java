@@ -46,7 +46,7 @@ public class App
 
 		try {
 
-			submissionID = post.postFiles(TranSyTSupportedDatabases.KEGG, false);
+			submissionID = post.postFiles(null);
 
 			if(submissionID!=null) {
 
