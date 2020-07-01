@@ -200,6 +200,8 @@ public class TranSyTRetriever implements Observer {
 			this.progress.setTime(GregorianCalendar.getInstance().getTimeInMillis() - this.startTime, 0, 4, "submitting files...");
 
 			boolean submitted = submitFiles();
+			//boolean submitted = true;
+
 
 			if (submitted && !this.cancel.get()) {
 
@@ -240,7 +242,11 @@ public class TranSyTRetriever implements Observer {
 
 		if(ProjectServices.isCompartmentalisedModel(this.project.getName()))
 			geneCompartment = c.runCompartmentsInterface(c.getThreshold());
-
+		
+		
+		//transytResultsFile = "C:\\Users\\Bisbii\\Desktop\\MERLIN\\merlin-project\\merlin-gui\\ws\\xfastidiosa_v4\\698414\\transyt\\results\\"; // REMOVE LATER
+		
+		
 		ParamSpec[] paramsSpec = new ParamSpec[]{
 				new ParamSpec("compartments", Map.class, geneCompartment, null),
 				new ParamSpec("transytResultPath", String.class, transytResultsFile.concat("transyt.xml"), null),
@@ -281,7 +287,7 @@ public class TranSyTRetriever implements Observer {
 					throw new IllegalArgumentException("please enter the taxonomic identification from NCBI taxonomy");
 				}
 
-				WorkspaceProcesses.createFaaFile(this.project.getName(), this.project.getTaxonomyID()); // method creates ".faa" files only if they do not exist
+				WorkspaceProcesses.createFaaFileWithDbIdsOnly(this.project.getName(), this.project.getTaxonomyID()); // method creates ".faa" files only if they do not exist
 			} 
 			catch (Exception e) {
 				Workbench.getInstance().error(e);
@@ -428,7 +434,7 @@ public class TranSyTRetriever implements Observer {
 
 				transytResultsFile = this.transytDirectory.concat("results/");
 
-				FileUtils.extractZipFile(this.transytDirectory.concat("/results.zip"), transytResultsFile);
+				FileUtils.extractZipFile(this.transytDirectory.concat("/results.zip"), this.transytDirectory);
 
 				File checksumFile = new File(transytResultsFile.concat("/checksum.md5"));
 
@@ -584,9 +590,9 @@ public class TranSyTRetriever implements Observer {
 
 		String workspaceFolder = FileUtils.getWorkspaceTaxonomyFolderPath(this.project.getName(), this.project.getTaxonomyID());
 
-		File proteinFile2 = new File(workspaceFolder.concat("protein.faa"));
+		File proteinFile2 = new File(workspaceFolder.concat("proteinGeneIds.faa"));
 
-		File genomeFile = new File(this.transytDirectory.concat("genome.faa"));
+		File genomeFile = new File(this.transytDirectory.concat("genomeGeneIds.faa"));
 
 		Files.copy(proteinFile2.toPath(), genomeFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 

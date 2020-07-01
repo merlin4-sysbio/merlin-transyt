@@ -63,7 +63,7 @@ public class HandlingRequestsAndRetrievalsTransyt {
 				.concat(userInputs.get("auto_accept_evalue").toString()).concat("/")
 				.concat(userInputs.get("percent_accept").toString()).concat("/")
 				.concat(userInputs.get("limit_evalue_accept").toString()).concat("/")
-				.concat(userInputs.get("ignore_m2").toString());
+				.concat(userInputs.get("ignore_method2").toString());
 
 		String charset = "UTF-8";
 		String param = "value";
